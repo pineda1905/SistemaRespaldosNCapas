@@ -1,0 +1,5 @@
+{
+    "ServidorMySQL": "localhost",
+    "Puerto": "3306",
+    "RutaRespaldos": "C:\\RespaldoMYSQL"
+}
