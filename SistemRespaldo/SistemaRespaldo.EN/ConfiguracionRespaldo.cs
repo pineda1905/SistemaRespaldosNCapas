@@ -5,6 +5,7 @@ using System.Text;
 namespace SistemaRespaldo.EN
 {
 
+   
     public class ConfiguracionRespaldo
     {
         public int Id { get; set; }
@@ -13,3 +14,5 @@ namespace SistemaRespaldo.EN
         public string TablasAIgnorar { get; set; }
     }
 }
+}
+
