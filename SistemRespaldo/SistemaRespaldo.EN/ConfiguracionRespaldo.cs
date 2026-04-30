@@ -4,6 +4,7 @@ using System.Text;
 
 namespace SistemaRespaldo.EN
 {
+
    
     public class ConfiguracionRespaldo
     {
@@ -12,5 +13,6 @@ namespace SistemaRespaldo.EN
         public bool TipoRespaldoCompletoOParcial { get; set; }
         public string TablasAIgnorar { get; set; }
     }
+}
 }
 
