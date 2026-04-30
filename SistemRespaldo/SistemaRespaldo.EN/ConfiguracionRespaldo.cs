@@ -4,7 +4,12 @@ using System.Text;
 
 namespace SistemaRespaldo.EN
 {
-    internal class ConfiguracionRespaldo
+
+    public class ConfiguracionRespaldo
     {
+        public int Id { get; set; }
+        public string NombreBaseDatos { get; set; }
+        public bool TipoRespaldoCompletoOParcial { get; set; }
+        public string TablasAIgnorar { get; set; }
     }
 }
