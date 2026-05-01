@@ -14,5 +14,3 @@ namespace SistemaRespaldo.EN
         public string TablasAIgnorar { get; set; }
     }
 }
-}
-
