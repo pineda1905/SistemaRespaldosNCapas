@@ -11,3 +11,15 @@
         "RutaMysqlDump": "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe"
     }
 }
+  "ConfiguracionServidor": {
+    "Servidor": "127.0.0.1",
+    "Puerto": "3306",
+    "Usuario": "root",
+    "Password": "base1234",
+    "BaseDatosConfig": "SistemaRespaldosConfig"
+  },
+  "Rutas": {
+    "RutaGuardadoRespaldos": "C:\\RespaldosMySQL\\",
+    "RutaMysqlDump": "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe"
+  }
+}
