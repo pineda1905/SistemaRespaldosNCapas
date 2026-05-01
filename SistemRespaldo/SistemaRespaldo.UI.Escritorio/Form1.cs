@@ -18,10 +18,5 @@ namespace SistemaRespaldo.UI.Escritorio
                 MessageBoxIcon.Information
             );
         }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
     }
 }
