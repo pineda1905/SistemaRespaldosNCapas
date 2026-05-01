@@ -1,8 +1,46 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mt-4">
+    <h1 class="display-4 fw-bold text-primary mb-3">¡Bienvenido al Gestor de Respaldos!</h1>
+    <p class="lead text-secondary">Protege tu información en MySQL de manera automatizada y segura mediante Arquitectura N-Capas.</p>
+    
+    <div class="row mt-5">
+        
+        <!-- Tarjeta 1: Información -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h1 class="display-5">⏱️</h1>
+                    <h5 class="card-title fw-bold mt-3">Automatización</h5>
+                    <p class="card-text text-muted">El motor de escritorio ejecutará mysqldump en segundo plano según los horarios que definas aquí.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta 2: Acción Principal (Destacada) -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow border-0 bg-primary text-white">
+                <div class="card-body">
+                    <h1 class="display-5">⚙️</h1>
+                    <h5 class="card-title fw-bold mt-3">Horarios</h5>
+                    <p class="card-text">Define la hora exacta en la que deseas que se realice el respaldo de las bases de datos.</p>
+                    <a asp-controller="Respaldos" asp-action="Index" class="btn btn-light mt-2 fw-bold text-primary">Ir a Programar</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta 3: Próximamente (Para la Semana 2 del cronograma) -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h1 class="display-5">📊</h1>
+                    <h5 class="card-title fw-bold mt-3">Gestor y Logs</h5>
+                    <p class="card-text text-muted">Administra las bases de datos y revisa el historial completo de éxito o error. (Próximamente)</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>

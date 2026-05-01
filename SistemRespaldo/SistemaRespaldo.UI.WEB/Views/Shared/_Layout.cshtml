@@ -1,19 +1,19 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SistemaRespaldo.UI.WEB</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - DB BackupManager</title>
+    <!-- Usamos el Bootstrap nativo que trae .NET -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SistemaRespaldo.UI.WEB.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body class="bg-light">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SistemaRespaldo.UI.WEB</a>
+        <!-- Barra de navegación con tema oscuro -->
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-4">
+            <div class="container">
+                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">🛡️ DB BackupManager</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -21,25 +21,28 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <!-- Aquí está tu acceso directo a la pantalla de respaldos -->
+                            <a class="nav-link text-warning fw-bold" asp-area="" asp-controller="Respaldos" asp-action="Index">⚙️ Programar Respaldo</a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
+    
     <div class="container">
         <main role="main" class="pb-3">
+            <!-- Aquí adentro es donde se inyectan las demás pantallas -->
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SistemaRespaldo.UI.WEB - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="border-top footer text-muted bg-white mt-auto py-3">
+        <div class="container text-center">
+            &copy; 2026 - Sistema de Respaldos MySQL - UI.Web por Pineda
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
