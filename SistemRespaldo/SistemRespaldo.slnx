@@ -6,4 +6,5 @@
   <Project Path="SistemaRespaldo.DAL/SistemaRespaldo.DAL.csproj" />
   <Project Path="SistemaRespaldo.EN/SistemaRespaldo.EN.csproj" />
   <Project Path="SistemaRespaldo.UI.Escritorio/SistemaRespaldo.UI.Escritorio.csproj" />
+  <Project Path="SistemaRespaldo.UI.WEB/SistemaRespaldo.UI.WEB.csproj" Id="bfc442d2-5826-4d14-bbce-e2755d701a22" />
 </Solution>

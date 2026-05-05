@@ -1,0 +1,43 @@
+﻿@{
+    ViewData["Title"] = "Configurar Horario de Respaldo";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Programar Nuevo Respaldo</h4>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Aquí mostramos los mensajes de éxito o error que mandamos desde TempData en el Controlador -->
+                    @if (TempData["Mensaje"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["Mensaje"]</div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
+
+                    <!-- El formulario que envía la hora ingresada al método GuardarHorario del Controlador -->
+                    <form asp-controller="Respaldos" asp-action="GuardarHorario" method="post">
+                        
+                        <div class="form-group mb-3">
+                            <label for="horaRespaldo" class="form-label">Seleccione la hora (Formato 24h):</label>
+                            <!-- El input type="time" muestra un reloj nativo en el navegador para elegir la hora -->
+                            <input type="time" class="form-control" id="horaRespaldo" name="horaRespaldo" required />
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Guardar Horario</button>
+                        </div>
+                        
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
