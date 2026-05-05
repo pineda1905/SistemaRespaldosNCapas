@@ -1,11 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace SistemaRespaldo.EN
 {
-
-   
     public class ConfiguracionRespaldo
     {
         public int Id { get; set; }

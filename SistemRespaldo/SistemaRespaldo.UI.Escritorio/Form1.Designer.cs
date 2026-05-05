@@ -1,4 +1,4 @@
-﻿namespace SistemaRespaldo.UI.Escritorio
+namespace SistemaRespaldo.UI.Escritorio
 {
     partial class Form1
     {
@@ -28,7 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
+            timer1 = new System.Windows.Forms.Timer(components);
             SuspendLayout();
+            // 
+            // timer1
+            // 
+            timer1.Enabled = true;
+            timer1.Interval = 60000;
+            timer1.Tick += timer1_Tick;
             // 
             // Form1
             // 
@@ -42,5 +50,7 @@
         }
 
         #endregion
+
+        private System.Windows.Forms.Timer timer1;
     }
 }
