@@ -1,49 +1,58 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Forms; // Necesario para MessageBox si decides dejarlo, aunque lo ideal es el log
 
 namespace SistemaRespaldo.UI.Escritorio
 {
     public static class RespaldoMotor
     {
-        // Esta función recibe el nombre de la BD y crea su archivo .sql
-        public static bool GenerarRespaldo(string nombreBaseDatos)
+        // --- CORRECCIÓN DÍA 6: Cambiamos de 'bool' a una Tupla '(bool exito, string mensaje)' ---
+        // Esto permite que el motor devuelva no solo si funcionó, sino también el mensaje de error
+        public static (bool exito, string mensaje) GenerarRespaldo(string nombreBaseDatos)
         {
             try
             {
-                // --- CÓDIGO NUEVO: Verificamos si la carpeta no existe, ¡y la creamos! ---
                 if (!Directory.Exists(ConfiguracionMotor.RutaGuardadoRespaldos))
                 {
                     Directory.CreateDirectory(ConfiguracionMotor.RutaGuardadoRespaldos);
                 }
-                // 1. Armamos el nombre del archivo con la fecha de hoy para que no se sobreescriban
-                // Ejemplo: campanaoficial_20260430_153000.sql
+
                 string fecha = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 string archivoDestino = Path.Combine(ConfiguracionMotor.RutaGuardadoRespaldos, $"{nombreBaseDatos}_{fecha}.sql");
 
-                // 2. Preparamos el comando exacto que le mandaríamos a la consola
-                // NOTA IMPORTANTE: En mysqldump, no debe haber espacio entre la -p y el password.
+                // Preparamos el comando
                 string argumentos = $"/c \"\"{ConfiguracionMotor.RutaMysqlDump}\" -h {ConfiguracionMotor.Servidor} -P {ConfiguracionMotor.Puerto} -u {ConfiguracionMotor.Usuario} -p{ConfiguracionMotor.Password} {nombreBaseDatos} > \"{archivoDestino}\"\"";
 
-                // 3. Configuramos la consola para que sea INVISIBLE
                 ProcessStartInfo startInfo = new ProcessStartInfo();
                 startInfo.FileName = "cmd.exe";
                 startInfo.Arguments = argumentos;
-                startInfo.CreateNoWindow = true; // ¡Esta es la clave para que la ventana negra no salte a la vista!
+                startInfo.CreateNoWindow = true;
                 startInfo.UseShellExecute = false;
 
-                // 4. Ejecutamos el comando y esperamos a que termine
+                // --- NUEVO: Redirigimos el error para capturar qué dice MySQL si algo falla ---
+                startInfo.RedirectStandardError = true;
+
                 using (Process proceso = Process.Start(startInfo))
                 {
+                    // Leemos el error de la consola (si es que hubo uno)
+                    string errorCapturado = proceso.StandardError.ReadToEnd();
                     proceso.WaitForExit();
+
+                    // Si el proceso termina con un código distinto a 0, hubo un error en mysqldump
+                    if (proceso.ExitCode != 0)
+                    {
+                        return (false, "Error de MySQL: " + errorCapturado);
+                    }
                 }
 
-                return true; // Si llegó hasta aquí, el respaldo se hizo con éxito
+                // Si todo sale bien, devolvemos true y un mensaje de éxito
+                return (true, "Respaldo completado con éxito");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error crítico al intentar respaldar: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
+                // En lugar de un MessageBox que detiene el motor, devolvemos el error para el Log
+                return (false, "Error crítico: " + ex.Message);
             }
         }
     }
