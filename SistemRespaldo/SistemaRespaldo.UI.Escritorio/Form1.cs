@@ -1,5 +1,7 @@
 using System;
 using System.Windows.Forms;
+using SistemaRespaldo.DAL; //
+using SistemaRespaldo.EN;  //
 
 namespace SistemaRespaldo.UI.Escritorio
 {
@@ -9,27 +11,47 @@ namespace SistemaRespaldo.UI.Escritorio
         {
             InitializeComponent();
 
-            // Prueba para tu Día 3:
-            MessageBox.Show(
-                $"Ruta del Motor: {ConfiguracionMotor.RutaMysqlDump}\n" +
-                $"Carpeta de Destino: {ConfiguracionMotor.RutaGuardadoRespaldos}",
-                "Prueba de Lectura JSON",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
+            // --- MODIFICACIÓN: Se eliminó el MessageBox de prueba para que el motor sea silencioso ---
         }
 
-    
+        // --- ESTE ES EL MÉTODO QUE EL DISEÑADOR BUSCA ---
+        // Si el error persiste, tenerlo aquí vacío lo solucionará
+        private void Form1_Load(object sender, EventArgs e)
+        {
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var resultado = RespaldoMotor.GenerarRespaldo("SistemaRespaldos");
+
+                ConsultasDAL dal = new ConsultasDAL();
+                dal.InsertarLog(new HistorialLog
+                {
+                    BaseDeDatos = "SistemaRespaldos",
+                    Estado = resultado.exito ? "Exito" : "Error",
+                    Mensaje = resultado.mensaje
+                });
+
+                MessageBox.Show($"Motor dice: {resultado.mensaje}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
+            }
+        }
+
         private void timer1_Tick(object sender, EventArgs e)
         {
-            // 1. Obtenemos la hora actual de tu computadora (horas y minutos, ignorando los segundos)
+            // 1. Obtenemos la hora actual de tu computadora
             TimeSpan horaActual = new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
 
-            // 2. Nos conectamos a la BD para leer los horarios usando la Capa de Datos (DAL)
-            SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
-            var horariosGuardados = dal.ObtenerHorarios();
+            // 2. Nos conectamos a la BD para leer los horarios
+            ConsultasDAL dal = new ConsultasDAL(); //
+            var horariosGuardados = dal.ObtenerHorarios(); //
 
-            // 3. Revisamos si la hora actual de tu PC coincide con algún horario guardado
+            // 3. Revisamos si la hora actual coincide con algún horario
             bool esHoraDeRespaldar = false;
             foreach (var horario in horariosGuardados)
             {
@@ -37,28 +59,64 @@ namespace SistemaRespaldo.UI.Escritorio
                     horario.HoraEjecucion.Minutes == horaActual.Minutes)
                 {
                     esHoraDeRespaldar = true;
-                    break; // Si encontramos coincidencia, dejamos de buscar
+                    break;
                 }
             }
 
-            // 4. Si es la hora exacta, iniciamos la magia
+            // 4. Si es la hora exacta, iniciamos el proceso
             if (esHoraDeRespaldar)
             {
-                // IMPORTANTE: Pausamos el reloj para que no intente hacer 2 respaldos en el mismo minuto
                 timer1.Enabled = false;
 
-                // Leemos de la BD cuáles son las bases de datos que debemos respaldar
-                var basesDeDatos = dal.ObtenerBasesDeDatos();
+                var basesDeDatos = dal.ObtenerBasesDeDatos(); //
 
-                // Mandamos a respaldar cada una de ellas
                 foreach (var bd in basesDeDatos)
                 {
-                    // Aquí llamamos a tu motor enviándole el nombre de la BD
-                    RespaldoMotor.GenerarRespaldo(bd.NombreBaseDatos);
+                    // --- EDICIÓN DÍA 6: Captura de resultados y registro de Logs ---
+
+                    // Ejecutamos el motor y recibimos (Éxito/Error y el Mensaje)
+                    var resultado = RespaldoMotor.GenerarRespaldo(bd.NombreBaseDatos);
+
+                    // Creamos el objeto del historial para la base de datos
+                    HistorialLog nuevoLog = new HistorialLog
+                    {
+                        BaseDeDatos = bd.NombreBaseDatos,
+                        Estado = resultado.exito ? "Exito" : "Error", //
+                        Mensaje = resultado.mensaje // Guardamos el éxito o el error detallado
+                    };
+
+                    // Guardamos el log en la tabla HistorialLogs
+                    dal.InsertarLog(nuevoLog);
+
+                    // --- FIN EDICIÓN DÍA 6 ---
                 }
 
-                // Encendemos el reloj nuevamente para que siga vigilando las próximas horas
                 timer1.Enabled = true;
+            }
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            try
+            {
+                MessageBox.Show("Iniciando prueba forzada...");
+                // Intentamos respaldar la BD que configuraste en el JSON
+                var resultado = RespaldoMotor.GenerarRespaldo("SistemaRespaldos");
+
+                // Registramos el Log
+                SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
+                dal.InsertarLog(new SistemaRespaldo.EN.HistorialLog
+                {
+                    BaseDeDatos = "SistemaRespaldos",
+                    Estado = resultado.exito ? "Exito" : "Error",
+                    Mensaje = resultado.mensaje
+                });
+
+                MessageBox.Show($"Resultado: {resultado.mensaje}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error en el botón: {ex.Message}");
             }
         }
     }
