@@ -24,12 +24,23 @@ namespace SistemaRespaldo.UI.Escritorio
         {
             try
             {
-                var resultado = RespaldoMotor.GenerarRespaldo("SistemaRespaldos");
+                MessageBox.Show("Iniciando prueba forzada...");
+
+                // --- CORRECCIÓN: Creamos el objeto que el motor espera ahora ---
+                var configuracionPrueba = new SistemaRespaldo.EN.ConfiguracionRespaldo
+                {
+                    NombreBaseDatos = "SistemaRespaldos",
+                    TipoRespaldoCompletoOParcial = true, // Prueba completa
+                    TablasAIgnorar = "" // Sin ignorar nada por ahora
+                };
+
+                // Ahora enviamos el objeto completo, no solo el string
+                var resultado = RespaldoMotor.GenerarRespaldo(configuracionPrueba);
 
                 ConsultasDAL dal = new ConsultasDAL();
                 dal.InsertarLog(new HistorialLog
                 {
-                    BaseDeDatos = "SistemaRespaldos",
+                    BaseDeDatos = configuracionPrueba.NombreBaseDatos,
                     Estado = resultado.exito ? "Exito" : "Error",
                     Mensaje = resultado.mensaje
                 });
@@ -44,51 +55,41 @@ namespace SistemaRespaldo.UI.Escritorio
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            // 1. Obtenemos la hora actual de tu computadora
             TimeSpan horaActual = new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
+            ConsultasDAL dal = new ConsultasDAL();
+            var horariosGuardados = dal.ObtenerHorarios();
 
-            // 2. Nos conectamos a la BD para leer los horarios
-            ConsultasDAL dal = new ConsultasDAL(); //
-            var horariosGuardados = dal.ObtenerHorarios(); //
-
-            // 3. Revisamos si la hora actual coincide con algún horario
             bool esHoraDeRespaldar = false;
-            foreach (var horario in horariosGuardados)
+            foreach (var h in horariosGuardados)
             {
-                if (horario.HoraEjecucion.Hours == horaActual.Hours &&
-                    horario.HoraEjecucion.Minutes == horaActual.Minutes)
+                if (h.HoraEjecucion.Hours == horaActual.Hours && h.HoraEjecucion.Minutes == horaActual.Minutes)
                 {
                     esHoraDeRespaldar = true;
                     break;
                 }
             }
 
-            // 4. Si es la hora exacta, iniciamos el proceso
             if (esHoraDeRespaldar)
             {
-                timer1.Enabled = false;
+                timer1.Enabled = false; // Pausa para evitar bucles en el mismo minuto
 
-                var basesDeDatos = dal.ObtenerBasesDeDatos(); //
+                // Leemos TODAS las configuraciones de bases de datos
+                var listaConfig = dal.ObtenerBasesDeDatos();
 
-                foreach (var bd in basesDeDatos)
+                foreach (var config in listaConfig)
                 {
-                    // --- EDICIÓN DÍA 6: Captura de resultados y registro de Logs ---
+                    // Ejecutamos el motor pasando el objeto de configuración (Día 7)
+                    var resultado = RespaldoMotor.GenerarRespaldo(config);
 
-                    // Ejecutamos el motor y recibimos (Éxito/Error y el Mensaje)
-                    var resultado = RespaldoMotor.GenerarRespaldo(bd.NombreBaseDatos);
-
-                    // Creamos el objeto del historial para la base de datos
-                    HistorialLog nuevoLog = new HistorialLog
+                    // --- DÍA 8: GUARDADO DE LOG SEGÚN RESULTADO ---
+                    HistorialLog log = new HistorialLog
                     {
-                        BaseDeDatos = bd.NombreBaseDatos,
-                        Estado = resultado.exito ? "Exito" : "Error", //
-                        Mensaje = resultado.mensaje // Guardamos el éxito o el error detallado
+                        BaseDeDatos = config.NombreBaseDatos,
+                        Estado = resultado.exito ? "Exito" : "Error",
+                        Mensaje = resultado.mensaje
                     };
 
-                    // Guardamos el log en la tabla HistorialLogs
-                    dal.InsertarLog(nuevoLog);
-
-                    // --- FIN EDICIÓN DÍA 6 ---
+                    dal.InsertarLog(log);
                 }
 
                 timer1.Enabled = true;
@@ -100,14 +101,23 @@ namespace SistemaRespaldo.UI.Escritorio
             try
             {
                 MessageBox.Show("Iniciando prueba forzada...");
-                // Intentamos respaldar la BD que configuraste en el JSON
-                var resultado = RespaldoMotor.GenerarRespaldo("SistemaRespaldos");
 
-                // Registramos el Log
+                // 1. Creamos la configuración para la prueba
+                var configPrueba = new SistemaRespaldo.EN.ConfiguracionRespaldo
+                {
+                    NombreBaseDatos = "SistemaRespaldos",
+                    TipoRespaldoCompletoOParcial = false, // ¡FALSO para que sea parcial!
+                    TablasAIgnorar = "horarios" // ¡Aquí le decimos la tabla!
+                };
+
+                // 2. Ahora enviamos el objeto 'configPrueba' en lugar del string con comillas
+                var resultado = RespaldoMotor.GenerarRespaldo(configPrueba);
+
+                // 3. Registramos el Log usando la DAL
                 SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
                 dal.InsertarLog(new SistemaRespaldo.EN.HistorialLog
                 {
-                    BaseDeDatos = "SistemaRespaldos",
+                    BaseDeDatos = configPrueba.NombreBaseDatos,
                     Estado = resultado.exito ? "Exito" : "Error",
                     Mensaje = resultado.mensaje
                 });
