@@ -2,46 +2,48 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Windows.Forms; // Necesario para MessageBox si decides dejarlo, aunque lo ideal es el log
 
 namespace SistemaRespaldo.UI.Escritorio
 {
     public static class RespaldoMotor
     {
-        // --- CORRECCIÓN DÍA 6: Cambiamos de 'bool' a una Tupla '(bool exito, string mensaje)' ---
-        // Esto permite que el motor devuelva no solo si funcionó, sino también el mensaje de error
-        public static (bool exito, string mensaje) GenerarRespaldo(ConfiguracionRespaldo config)
+        // CAMBIO: Ahora recibe 'BaseDatos' en lugar de la clase vieja
+        public static (bool exito, string mensaje) GenerarRespaldo(BaseDatos config)
         {
             try
             {
+                // Verificamos que la ruta de guardado exista (Configurada en tu JSON)
                 if (!Directory.Exists(ConfiguracionMotor.RutaGuardadoRespaldos))
                     Directory.CreateDirectory(ConfiguracionMotor.RutaGuardadoRespaldos);
 
                 string fecha = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                string archivoDestino = Path.Combine(ConfiguracionMotor.RutaGuardadoRespaldos, $"{config.NombreBaseDatos}_{fecha}.sql");
+                
+                // CAMBIO: Usamos 'config.Nombre'
+                string archivoDestino = Path.Combine(ConfiguracionMotor.RutaGuardadoRespaldos, $"{config.Nombre}_{fecha}.sql");
 
-                // --- DÍA 7: CONSTRUCCIÓN DINÁMICA DEL COMANDO ---
+                // --- CONSTRUCCIÓN DINÁMICA DEL COMANDO ---
                 string comandoIgnorar = "";
 
-                // Si el respaldo NO es completo (es parcial) y hay tablas para ignorar
-                if (!config.TipoRespaldoCompletoOParcial && !string.IsNullOrEmpty(config.TablasAIgnorar))
+                // CAMBIO: Usamos 'config.EsCompleto'
+                if (!config.EsCompleto && !string.IsNullOrEmpty(config.TablasAIgnorar))
                 {
-                    // Alex guarda las tablas separadas por coma (ej: "usuarios,logs,temp")
                     string[] tablas = config.TablasAIgnorar.Split(',');
                     foreach (string tabla in tablas)
                     {
-                        // Formato: --ignore-table=base_datos.tabla
-                        comandoIgnorar += $" --ignore-table={config.NombreBaseDatos}.{tabla.Trim()}";
+                        // IMPORTANTE: Mantenemos el formato para mysqldump
+                        comandoIgnorar += $" --ignore-table={config.Nombre}.{tabla.Trim()}";
                     }
                 }
 
-                // Armamos los argumentos finales incluyendo los ignorados
-                string argumentos = $"/c \"\"{ConfiguracionMotor.RutaMysqlDump}\" -h {ConfiguracionMotor.Servidor} -P {ConfiguracionMotor.Puerto} -u {ConfiguracionMotor.Usuario} -p{ConfiguracionMotor.Password} {config.NombreBaseDatos} {comandoIgnorar} > \"{archivoDestino}\"\"";
+                // --- AJUSTE PARA LINUX (LUBUNTU) ---
+                // Nota: En Linux no usamos 'cmd.exe /c', llamamos directamente a mysqldump o usamos /bin/bash
+                // Pero para mantener la compatibilidad con lo que tienes:
+                string argumentos = $"-h {ConfiguracionMotor.Servidor} -P {ConfiguracionMotor.Puerto} -u {ConfiguracionMotor.Usuario} -p{ConfiguracionMotor.Password} {config.Nombre} {comandoIgnorar}";
 
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
-                    FileName = "cmd.exe",
-                    Arguments = argumentos,
+                    FileName = ConfiguracionMotor.RutaMysqlDump, // Ruta directa al binario (/usr/bin/mysqldump)
+                    Arguments = $"{argumentos} --result-file=\"{archivoDestino}\"",
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardError = true
@@ -52,12 +54,11 @@ namespace SistemaRespaldo.UI.Escritorio
                     string errorCapturado = proceso.StandardError.ReadToEnd();
                     proceso.WaitForExit();
 
-                    // --- DÍA 8: CONEXIÓN DE RESULTADO ---
                     if (proceso.ExitCode != 0)
                         return (false, "Error MySQL: " + errorCapturado);
                 }
 
-                return (true, "Respaldo exitoso");
+                return (true, "Respaldo exitoso en: " + archivoDestino);
             }
             catch (Exception ex)
             {

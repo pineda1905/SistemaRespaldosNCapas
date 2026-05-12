@@ -21,14 +21,20 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
     <li class="nav-item">
-        <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+        <a class="nav-link text-light" asp-controller="Home" asp-action="Index">Inicio</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-warning fw-bold" asp-area="" asp-controller="Respaldos" asp-action="Index">⚙️ Programar Respaldo</a>
+        <a class="nav-link text-warning fw-bold" asp-controller="Respaldos" asp-action="Index">⚙️ Programar</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-info fw-bold" asp-area="" asp-controller="BasesDatos" asp-action="Index">📂 Gestionar Bases</a>
+        <a class="nav-link text-info fw-bold" asp-controller="BasesDatos" asp-action="Index">📂 Gestionar Bases</a>
     </li>
+    
+  <li class="nav-item ms-auto">
+    <button type="button" class="btn btn-outline-danger btn-sm fw-bold px-3" data-bs-toggle="modal" data-bs-target="#logoutModal">
+        salir 🚪
+    </button>
+</li>
 </ul>
                 </div>
             </div>
@@ -51,5 +57,25 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="logoutModalLabel">🚪 Cerrar Sesión</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <p class="fs-5">¿Estás seguro de que quieres salir del panel de control?</p>
+        <p class="text-muted small">Cualquier cambio no guardado podría perderse.</p>
+      </div>
+      <div class="modal-footer justify-content-center border-0">
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-danger px-4">Sí, Salir</a>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

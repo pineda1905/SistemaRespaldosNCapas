@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Forms;
-using SistemaRespaldo.DAL; //
-using SistemaRespaldo.EN;  //
+using SistemaRespaldo.DAL; 
+using SistemaRespaldo.EN;  
 
 namespace SistemaRespaldo.UI.Escritorio
 {
@@ -10,53 +10,55 @@ namespace SistemaRespaldo.UI.Escritorio
         public Form1()
         {
             InitializeComponent();
-
-            // --- MODIFICACIÓN: Se eliminó el MessageBox de prueba para que el motor sea silencioso ---
         }
 
-        // --- ESTE ES EL MÉTODO QUE EL DISEÑADOR BUSCA ---
-        // Si el error persiste, tenerlo aquí vacío lo solucionará
         private void Form1_Load(object sender, EventArgs e)
         {
+            // El motor arranca el Timer automáticamente si lo tienes configurado en el diseñador
         }
 
+        // --- BOTÓN DE PRUEBA MANUAL ---
         private void button1_Click(object sender, EventArgs e)
         {
             try
             {
-                MessageBox.Show("Iniciando prueba forzada...");
+                MessageBox.Show("Iniciando prueba de respaldo manual...");
 
-                // --- CORRECCIÓN: Creamos el objeto que el motor espera ahora ---
-                var configuracionPrueba = new SistemaRespaldo.EN.ConfiguracionRespaldo
+                // Usamos la nueva entidad 'BaseDatos'
+                var configPrueba = new BaseDatos
                 {
-                    NombreBaseDatos = "SistemaRespaldos",
-                    TipoRespaldoCompletoOParcial = true, // Prueba completa
-                    TablasAIgnorar = "" // Sin ignorar nada por ahora
+                    Nombre = "SistemaRespaldos",
+                    EsCompleto = false, // Prueba parcial
+                    TablasAIgnorar = "HistorialLogs" // Ejemplo de tabla a ignorar
                 };
 
-                // Ahora enviamos el objeto completo, no solo el string
-                var resultado = RespaldoMotor.GenerarRespaldo(configuracionPrueba);
+                // Enviamos al motor
+                var resultado = RespaldoMotor.GenerarRespaldo(configPrueba);
 
+                // Guardamos el Log
                 ConsultasDAL dal = new ConsultasDAL();
                 dal.InsertarLog(new HistorialLog
                 {
-                    BaseDeDatos = configuracionPrueba.NombreBaseDatos,
+                    BaseDeDatos = configPrueba.Nombre,
                     Estado = resultado.exito ? "Exito" : "Error",
                     Mensaje = resultado.mensaje
                 });
 
-                MessageBox.Show($"Motor dice: {resultado.mensaje}");
+                MessageBox.Show($"Resultado: {resultado.mensaje}");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}");
+                MessageBox.Show($"Error en la prueba: {ex.Message}");
             }
         }
 
+        // --- EL RELOJ QUE REVISA LOS HORARIOS ---
         private void timer1_Tick(object sender, EventArgs e)
         {
+            // Solo comparamos Horas y Minutos (segundos a 0)
             TimeSpan horaActual = new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
             ConsultasDAL dal = new ConsultasDAL();
+            
             var horariosGuardados = dal.ObtenerHorarios();
 
             bool esHoraDeRespaldar = false;
@@ -71,62 +73,28 @@ namespace SistemaRespaldo.UI.Escritorio
 
             if (esHoraDeRespaldar)
             {
-                timer1.Enabled = false; // Pausa para evitar bucles en el mismo minuto
+                timer1.Enabled = false; // Pausar para que no se repita en el mismo minuto
 
-                // Leemos TODAS las configuraciones de bases de datos
+                // Obtenemos todas las bases de datos configuradas desde tu Web
                 var listaConfig = dal.ObtenerBasesDeDatos();
 
                 foreach (var config in listaConfig)
                 {
-                    // Ejecutamos el motor pasando el objeto de configuración (Día 7)
+                    // El motor ahora recibe 'BaseDatos' y aplica tus reglas de ignorar tablas
                     var resultado = RespaldoMotor.GenerarRespaldo(config);
 
-                    // --- DÍA 8: GUARDADO DE LOG SEGÚN RESULTADO ---
-                    HistorialLog log = new HistorialLog
+                    // Registro del historial
+                    dal.InsertarLog(new HistorialLog
                     {
-                        BaseDeDatos = config.NombreBaseDatos,
+                        BaseDeDatos = config.Nombre,
                         Estado = resultado.exito ? "Exito" : "Error",
                         Mensaje = resultado.mensaje
-                    };
-
-                    dal.InsertarLog(log);
+                    });
                 }
 
+                // Esperamos un minuto antes de reactivar para evitar doble ejecución
+                System.Threading.Thread.Sleep(60000); 
                 timer1.Enabled = true;
-            }
-        }
-
-        private void button1_Click_1(object sender, EventArgs e)
-        {
-            try
-            {
-                MessageBox.Show("Iniciando prueba forzada...");
-
-                // 1. Creamos la configuración para la prueba
-                var configPrueba = new SistemaRespaldo.EN.ConfiguracionRespaldo
-                {
-                    NombreBaseDatos = "SistemaRespaldos",
-                    TipoRespaldoCompletoOParcial = false, // ¡FALSO para que sea parcial!
-                    TablasAIgnorar = "horarios" // ¡Aquí le decimos la tabla!
-                };
-
-                // 2. Ahora enviamos el objeto 'configPrueba' en lugar del string con comillas
-                var resultado = RespaldoMotor.GenerarRespaldo(configPrueba);
-
-                // 3. Registramos el Log usando la DAL
-                SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
-                dal.InsertarLog(new SistemaRespaldo.EN.HistorialLog
-                {
-                    BaseDeDatos = configPrueba.NombreBaseDatos,
-                    Estado = resultado.exito ? "Exito" : "Error",
-                    Mensaje = resultado.mensaje
-                });
-
-                MessageBox.Show($"Resultado: {resultado.mensaje}");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error en el botón: {ex.Message}");
             }
         }
     }

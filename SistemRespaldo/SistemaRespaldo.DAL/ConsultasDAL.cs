@@ -1,21 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using MySqlConnector; // Usamos exclusivamente la librería moderna
+using MySqlConnector; 
 using SistemaRespaldo.EN;
 
 namespace SistemaRespaldo.DAL
 {
     public class ConsultasDAL
     {
-        // Función 1: Leer las bases de datos a respaldar
-        public List<ConfiguracionRespaldo> ObtenerBasesDeDatos()
+        // FUNCIÓN 1 ACTUALIZADA: Ahora lee de tu nueva tabla 'BasesDatos'
+        public List<BaseDatos> ObtenerBasesDeDatos()
         {
-            List<ConfiguracionRespaldo> listaBD = new List<ConfiguracionRespaldo>();
+            List<BaseDatos> listaBD = new List<BaseDatos>();
 
-            // ¡Aplicamos tu lector de JSON!
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
-                string query = "SELECT ID, NombreBaseDatos, TipoRespaldoCompletoOParcial, TablasAIgnorar FROM ConfiguracionRespaldos";
+                // Usamos los campos nuevos: EsCompleto y TablasAIgnorar
+                string query = "SELECT Id, Nombre, EsCompleto, TablasAIgnorar FROM BasesDatos";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
 
                 conexion.Open();
@@ -24,12 +24,12 @@ namespace SistemaRespaldo.DAL
                 {
                     while (reader.Read())
                     {
-                        listaBD.Add(new ConfiguracionRespaldo
+                        listaBD.Add(new BaseDatos
                         {
-                            Id = Convert.ToInt32(reader["ID"]),
-                            NombreBaseDatos = reader["NombreBaseDatos"].ToString(),
-                            TipoRespaldoCompletoOParcial = Convert.ToBoolean(reader["TipoRespaldoCompletoOParcial"]),
-                            TablasAIgnorar = reader["TablasAIgnorar"] != DBNull.Value ? reader["TablasAIgnorar"].ToString() : null
+                            Id = Convert.ToInt32(reader["Id"]),
+                            Nombre = reader["Nombre"].ToString(),
+                            EsCompleto = Convert.ToBoolean(reader["EsCompleto"]),
+                            TablasAIgnorar = reader["TablasAIgnorar"] != DBNull.Value ? reader["TablasAIgnorar"].ToString() : ""
                         });
                     }
                 }
@@ -37,7 +37,6 @@ namespace SistemaRespaldo.DAL
             return listaBD;
         }
 
-        // Función 2: Leer los horarios
         public List<Horario> ObtenerHorarios()
         {
             List<Horario> listaHorarios = new List<Horario>();
@@ -64,7 +63,6 @@ namespace SistemaRespaldo.DAL
             return listaHorarios;
         }
 
-        // Función 3: GUARDAR un nuevo horario (Tu aporte)
         public bool InsertarHorario(TimeSpan horaEjecucion)
         {
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
@@ -75,39 +73,36 @@ namespace SistemaRespaldo.DAL
                 using (MySqlCommand comando = new MySqlCommand(query, conexion))
                 {
                     comando.Parameters.AddWithValue("@hora", horaEjecucion);
-                    int filasAfectadas = comando.ExecuteNonQuery();
-                    return filasAfectadas > 0;
+                    return comando.ExecuteNonQuery() > 0;
                 }
             }
         }
 
-        // Función 4: GUARDAR una nueva Base de Datos a respaldar (Tu aporte)
-        public bool InsertarBaseDeDatos(string nombreBd, bool esCompleto, string tablasIgnorar)
+        // FUNCIÓN 4 ACTUALIZADA: Para que coincida con tu Web
+        public bool InsertarBaseDeDatos(BaseDatos db)
         {
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
                 conexion.Open();
-                // Ajustado para coincidir con la tabla que lee Anderson
-                string query = "INSERT INTO ConfiguracionRespaldos (NombreBaseDatos, TipoRespaldoCompletoOParcial, TablasAIgnorar) " +
+                string query = "INSERT INTO BasesDatos (Nombre, EsCompleto, TablasAIgnorar) " +
                                "VALUES (@nombre, @completo, @tablas)";
 
                 using (MySqlCommand comando = new MySqlCommand(query, conexion))
                 {
-                    comando.Parameters.AddWithValue("@nombre", nombreBd);
-                    comando.Parameters.AddWithValue("@completo", esCompleto);
-                    comando.Parameters.AddWithValue("@tablas", string.IsNullOrEmpty(tablasIgnorar) ? (object)DBNull.Value : tablasIgnorar);
+                    comando.Parameters.AddWithValue("@nombre", db.Nombre);
+                    comando.Parameters.AddWithValue("@completo", db.EsCompleto);
+                    comando.Parameters.AddWithValue("@tablas", string.IsNullOrEmpty(db.TablasAIgnorar) ? (object)DBNull.Value : db.TablasAIgnorar);
 
-                    int filasAfectadas = comando.ExecuteNonQuery();
-                    return filasAfectadas > 0;
+                    return comando.ExecuteNonQuery() > 0;
                 }
             }
         }
 
-        //Metodo que usará el motor para "escribir en el diario" de la base de datos.
         public bool InsertarLog(HistorialLog log)
         {
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
+                // Asegúrate de que esta tabla 'HistorialLogs' exista en MySQL
                 string query = "INSERT INTO HistorialLogs (BaseDeDatos, Estado, Mensaje) VALUES (@db, @estado, @msj)";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
 
