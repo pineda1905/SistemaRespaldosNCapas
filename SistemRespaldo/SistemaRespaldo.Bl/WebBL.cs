@@ -41,5 +41,17 @@ namespace SistemaRespaldo.BL
             // Llamamos a tu DAL exclusiva de la Web
             return dal.GuardarHorario(nuevoHorario);
         }
+
+// Agrega esto dentro de la clase WebBL
+public bool EliminarBaseDatos(int id)
+{
+    if (id <= 0)
+    {
+        throw new ArgumentException("El ID no es válido.");
     }
+    return dal.EliminarBaseDatos(id);
+}
+
+    }
+
 }

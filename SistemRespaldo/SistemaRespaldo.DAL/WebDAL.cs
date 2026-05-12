@@ -8,50 +8,47 @@ namespace SistemaRespaldo.DAL
     public class WebDAL
     {
         // Método para listar las bases de datos guardadas
-        public List<BaseDatos> ObtenerBasesDatos()
+      // 1. Modifica el SELECT para traer las nuevas columnas
+public List<BaseDatos> ObtenerBasesDatos()
+{
+    List<BaseDatos> lista = new List<BaseDatos>();
+    using (var conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+    {
+        conn.Open();
+        string sql = "SELECT Id, Nombre, EsCompleto, TablasAIgnorar FROM BasesDatos";
+        using (var cmd = new MySqlCommand(sql, conn))
+        using (var reader = cmd.ExecuteReader())
         {
-            List<BaseDatos> lista = new List<BaseDatos>();
-            try
+            while (reader.Read())
             {
-                using (var conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
-                {
-                    conn.Open();
-                    string sql = "SELECT Id, Nombre FROM BasesDatos";
-                    using (var cmd = new MySqlCommand(sql, conn))
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            lista.Add(new BaseDatos { 
-                                Id = reader.GetInt32("Id"), 
-                                Nombre = reader.GetString("Nombre") 
-                            });
-                        }
-                    }
-                }
+                lista.Add(new BaseDatos { 
+                    Id = reader.GetInt32("Id"), 
+                    Nombre = reader.GetString("Nombre"),
+                    EsCompleto = reader.GetBoolean("EsCompleto"),
+                    TablasAIgnorar = reader.IsDBNull(reader.GetOrdinal("TablasAIgnorar")) ? "" : reader.GetString("TablasAIgnorar")
+                });
             }
-            catch (Exception ex) { throw new Exception("Error al leer: " + ex.Message); }
-            return lista;
         }
+    }
+    return lista;
+}
 
-        // Método para insertar una nueva base de datos
-        public bool GuardarBaseDatos(BaseDatos db)
+// 2. Modifica el INSERT para guardar los nuevos datos
+public bool GuardarBaseDatos(BaseDatos db)
+{
+    using (var conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+    {
+        conn.Open();
+        string sql = "INSERT INTO BasesDatos (Nombre, EsCompleto, TablasAIgnorar) VALUES (@nom, @comp, @ign)";
+        using (var cmd = new MySqlCommand(sql, conn))
         {
-            try
-            {
-                using (var conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
-                {
-                    conn.Open();
-                    string sql = "INSERT INTO BasesDatos (Nombre) VALUES (@nom)";
-                    using (var cmd = new MySqlCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@nom", db.Nombre);
-                        return cmd.ExecuteNonQuery() > 0;
-                    }
-                }
-            }
-            catch (Exception ex) { throw new Exception("Error al guardar: " + ex.Message); }
+            cmd.Parameters.AddWithValue("@nom", db.Nombre);
+            cmd.Parameters.AddWithValue("@comp", db.EsCompleto);
+            cmd.Parameters.AddWithValue("@ign", db.TablasAIgnorar ?? (object)DBNull.Value);
+            return cmd.ExecuteNonQuery() > 0;
         }
+    }
+}
 
 
         public bool GuardarHorario(Horario horario)
@@ -67,7 +64,20 @@ namespace SistemaRespaldo.DAL
                 }
             }
         }
+    
+        public bool EliminarBaseDatos(int id)
+{
+    using (var conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+    {
+        conn.Open();
+        string sql = "DELETE FROM BasesDatos WHERE Id = @id";
+        using (var cmd = new MySqlCommand(sql, conn))
+        {
+            cmd.Parameters.AddWithValue("@id", id);
+            return cmd.ExecuteNonQuery() > 0;
+        }
     }
-        
+}
 
+    }
 }

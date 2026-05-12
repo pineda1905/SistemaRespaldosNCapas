@@ -2,8 +2,8 @@
     "ConfiguracionServidor": {
         "Servidor": "127.0.0.1",
         "Puerto": "3306",
-        "Usuario": "root",
-        "Password": "anderson",
+        "Usuario": "alex",
+        "Password": "12345",
         "BaseDatosConfig": "SistemaRespaldos"
     },
     "Rutas": {

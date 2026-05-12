@@ -27,20 +27,37 @@ namespace SistemaRespaldo.UI.WEB.Controllers
 
         // 2. Procesar el formulario cuando le des al botón "Registrar"
         [HttpPost]
-        public IActionResult Guardar(string nombreBaseDatos)
-        {
-            try
-            {
-                BaseDatos nuevaDb = new BaseDatos { Nombre = nombreBaseDatos };
-                bl.GuardarBaseDatos(nuevaDb);
-                TempData["Mensaje"] = "¡Base de datos registrada con éxito!";
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error al registrar: " + ex.Message;
-            }
-
-            return RedirectToAction("Index");
-        }
+public IActionResult Guardar(string nombreBaseDatos, string tipoRespaldo, string tablasIgnorar)
+{
+    try
+    {
+        BaseDatos nuevaDb = new BaseDatos { 
+            Nombre = nombreBaseDatos,
+            EsCompleto = (tipoRespaldo == "Completo"),
+            TablasAIgnorar = tablasIgnorar ?? ""
+        };
+        
+        bl.GuardarBaseDatos(nuevaDb);
+        TempData["Mensaje"] = "¡Configuración guardada correctamente!";
     }
+    catch (Exception ex)
+    {
+        TempData["Error"] = "Error: " + ex.Message;
+    }
+    return RedirectToAction("Index");
+   
 }
+
+
+
+public IActionResult Eliminar(int id)
+{
+    bl.EliminarBaseDatos(id); // Recuerda agregar este método también en la BL
+    TempData["Mensaje"] = "Base de datos eliminada del monitoreo.";
+    return RedirectToAction("Index");
+}
+    }
+    
+    
+}   
+
