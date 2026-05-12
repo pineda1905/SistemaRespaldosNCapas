@@ -5,6 +5,6 @@ namespace SistemaRespaldo.EN
     public class BaseDatos
     {
         public int Id { get; set; }
-        public string Nombre { get; set; } // Nombre de la base de datos a respaldar
+       public string Nombre { get; set; } = string.Empty;
     }
 }
