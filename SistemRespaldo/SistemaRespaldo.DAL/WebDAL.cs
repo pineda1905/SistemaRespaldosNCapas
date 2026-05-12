@@ -1,14 +1,25 @@
 ﻿using System;
+<<<<<<< HEAD
 using System.Collections.Generic;
 using MySqlConnector; 
+=======
+using MySqlConnector;
+>>>>>>> develop
 using SistemaRespaldo.EN;
+// IMPORTANTE: Agregamos la referencia a la DAL para usar el Helper
+using SistemaRespaldo.DAL;
 
 namespace SistemaRespaldo.DAL
 {
     public class WebDAL
     {
+<<<<<<< HEAD
        private string connectionString = "Server=localhost;Database=SistemaRespaldos;Uid=alex;Pwd=12345;";
        
+=======
+        // ELIMINAMOS la línea de la contraseña "anderson" o "base1234"
+        // Ahora usamos ConfiguracionHelper.CadenaConexion
+>>>>>>> develop
 
         // 1. Obtener todas las bases de datos registradas
         public List<BaseDatos> ObtenerBasesDatos()
@@ -72,7 +83,10 @@ namespace SistemaRespaldo.DAL
         {
             try
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
+                // Ahora el código es universal. 
+                // Si Alex tiene su JSON con su clave, le funcionará a él.
+                // Si tú tienes el tuyo, te funcionará a ti.
+                using (MySqlConnection conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
                 {
                     conn.Open();
                     string query = "INSERT INTO Horarios (HoraEjecucion) VALUES (@hora)";
@@ -81,7 +95,11 @@ namespace SistemaRespaldo.DAL
                     {
                         cmd.Parameters.AddWithValue("@hora", horario.HoraEjecucion);
                         int filasAfectadas = cmd.ExecuteNonQuery();
+<<<<<<< HEAD
                         return filasAfectadas > 0; 
+=======
+                        return filasAfectadas > 0;
+>>>>>>> develop
                     }
                 }
             }

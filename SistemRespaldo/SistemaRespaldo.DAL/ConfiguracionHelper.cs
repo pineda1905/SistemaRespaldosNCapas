@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.Configuration;
+using System.IO;
 
 namespace SistemaRespaldo.DAL
 {
@@ -11,12 +12,18 @@ namespace SistemaRespaldo.DAL
 
         static ConfiguracionHelper()
         {
+            // Detectamos si existe appsettings.json (Web) o config.json (Escritorio)
+            string nombreArchivo = File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json"))
+                                   ? "appsettings.json"
+                                   : "config.json";
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("config.json", optional: false, reloadOnChange: true);
+                .AddJsonFile(nombreArchivo, optional: false, reloadOnChange: true);
 
             IConfiguration config = builder.Build();
 
+            // Extraemos los datos (la estructura es idéntica en ambos JSON)
             string servidor = config["ConfiguracionServidor:Servidor"];
             string puerto = config["ConfiguracionServidor:Puerto"];
             string usuario = config["ConfiguracionServidor:Usuario"];

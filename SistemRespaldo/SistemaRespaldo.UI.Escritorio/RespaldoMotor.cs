@@ -1,49 +1,67 @@
-﻿using System;
+﻿using SistemaRespaldo.EN;
+using System;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Forms; // Necesario para MessageBox si decides dejarlo, aunque lo ideal es el log
 
 namespace SistemaRespaldo.UI.Escritorio
 {
     public static class RespaldoMotor
     {
-        // Esta función recibe el nombre de la BD y crea su archivo .sql
-        public static bool GenerarRespaldo(string nombreBaseDatos)
+        // --- CORRECCIÓN DÍA 6: Cambiamos de 'bool' a una Tupla '(bool exito, string mensaje)' ---
+        // Esto permite que el motor devuelva no solo si funcionó, sino también el mensaje de error
+        public static (bool exito, string mensaje) GenerarRespaldo(ConfiguracionRespaldo config)
         {
             try
             {
-                // --- CÓDIGO NUEVO: Verificamos si la carpeta no existe, ¡y la creamos! ---
                 if (!Directory.Exists(ConfiguracionMotor.RutaGuardadoRespaldos))
-                {
                     Directory.CreateDirectory(ConfiguracionMotor.RutaGuardadoRespaldos);
-                }
-                // 1. Armamos el nombre del archivo con la fecha de hoy para que no se sobreescriban
-                // Ejemplo: campanaoficial_20260430_153000.sql
+
                 string fecha = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                string archivoDestino = Path.Combine(ConfiguracionMotor.RutaGuardadoRespaldos, $"{nombreBaseDatos}_{fecha}.sql");
+                string archivoDestino = Path.Combine(ConfiguracionMotor.RutaGuardadoRespaldos, $"{config.NombreBaseDatos}_{fecha}.sql");
 
-                // 2. Preparamos el comando exacto que le mandaríamos a la consola
-                // NOTA IMPORTANTE: En mysqldump, no debe haber espacio entre la -p y el password.
-                string argumentos = $"/c \"\"{ConfiguracionMotor.RutaMysqlDump}\" -h {ConfiguracionMotor.Servidor} -P {ConfiguracionMotor.Puerto} -u {ConfiguracionMotor.Usuario} -p{ConfiguracionMotor.Password} {nombreBaseDatos} > \"{archivoDestino}\"\"";
+                // --- DÍA 7: CONSTRUCCIÓN DINÁMICA DEL COMANDO ---
+                string comandoIgnorar = "";
 
-                // 3. Configuramos la consola para que sea INVISIBLE
-                ProcessStartInfo startInfo = new ProcessStartInfo();
-                startInfo.FileName = "cmd.exe";
-                startInfo.Arguments = argumentos;
-                startInfo.CreateNoWindow = true; // ¡Esta es la clave para que la ventana negra no salte a la vista!
-                startInfo.UseShellExecute = false;
+                // Si el respaldo NO es completo (es parcial) y hay tablas para ignorar
+                if (!config.TipoRespaldoCompletoOParcial && !string.IsNullOrEmpty(config.TablasAIgnorar))
+                {
+                    // Alex guarda las tablas separadas por coma (ej: "usuarios,logs,temp")
+                    string[] tablas = config.TablasAIgnorar.Split(',');
+                    foreach (string tabla in tablas)
+                    {
+                        // Formato: --ignore-table=base_datos.tabla
+                        comandoIgnorar += $" --ignore-table={config.NombreBaseDatos}.{tabla.Trim()}";
+                    }
+                }
 
-                // 4. Ejecutamos el comando y esperamos a que termine
+                // Armamos los argumentos finales incluyendo los ignorados
+                string argumentos = $"/c \"\"{ConfiguracionMotor.RutaMysqlDump}\" -h {ConfiguracionMotor.Servidor} -P {ConfiguracionMotor.Puerto} -u {ConfiguracionMotor.Usuario} -p{ConfiguracionMotor.Password} {config.NombreBaseDatos} {comandoIgnorar} > \"{archivoDestino}\"\"";
+
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = argumentos,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardError = true
+                };
+
                 using (Process proceso = Process.Start(startInfo))
                 {
+                    string errorCapturado = proceso.StandardError.ReadToEnd();
                     proceso.WaitForExit();
+
+                    // --- DÍA 8: CONEXIÓN DE RESULTADO ---
+                    if (proceso.ExitCode != 0)
+                        return (false, "Error MySQL: " + errorCapturado);
                 }
 
-                return true; // Si llegó hasta aquí, el respaldo se hizo con éxito
+                return (true, "Respaldo exitoso");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error crítico al intentar respaldar: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
+                return (false, "Error Crítico: " + ex.Message);
             }
         }
     }

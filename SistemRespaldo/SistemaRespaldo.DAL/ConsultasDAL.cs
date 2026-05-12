@@ -102,5 +102,22 @@ namespace SistemaRespaldo.DAL
                 }
             }
         }
+
+        //Metodo que usará el motor para "escribir en el diario" de la base de datos.
+        public bool InsertarLog(HistorialLog log)
+        {
+            using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+            {
+                string query = "INSERT INTO HistorialLogs (BaseDeDatos, Estado, Mensaje) VALUES (@db, @estado, @msj)";
+                MySqlCommand comando = new MySqlCommand(query, conexion);
+
+                comando.Parameters.AddWithValue("@db", log.BaseDeDatos);
+                comando.Parameters.AddWithValue("@estado", log.Estado);
+                comando.Parameters.AddWithValue("@msj", log.Mensaje);
+
+                conexion.Open();
+                return comando.ExecuteNonQuery() > 0;
+            }
+        }
     }
 }
