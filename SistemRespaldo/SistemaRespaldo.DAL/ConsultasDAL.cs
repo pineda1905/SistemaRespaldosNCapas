@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using MySqlConnector; 
 using SistemaRespaldo.EN;
@@ -7,15 +7,14 @@ namespace SistemaRespaldo.DAL
 {
     public class ConsultasDAL
     {
-        // FUNCIÓN 1 ACTUALIZADA: Ahora lee de tu nueva tabla 'BasesDatos'
+        // FUNCIÓN 1 ACTUALIZADA: Lee de tu nueva tabla 'BasesDatos'
         public List<BaseDatos> ObtenerBasesDeDatos()
         {
             List<BaseDatos> listaBD = new List<BaseDatos>();
 
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
-                // Usamos los campos nuevos: EsCompleto y TablasAIgnorar
-                string query = "SELECT Id, Nombre, EsCompleto, TablasAIgnorar FROM BasesDatos";
+                string query = "SELECT Id, Nombre, EsCompleto, TablasAIgnorar, TipoMotor, CadenaConexion FROM BasesDatos";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
 
                 conexion.Open();
@@ -29,7 +28,9 @@ namespace SistemaRespaldo.DAL
                             Id = Convert.ToInt32(reader["Id"]),
                             Nombre = reader["Nombre"].ToString(),
                             EsCompleto = Convert.ToBoolean(reader["EsCompleto"]),
-                            TablasAIgnorar = reader["TablasAIgnorar"] != DBNull.Value ? reader["TablasAIgnorar"].ToString() : ""
+                            TablasAIgnorar = reader["TablasAIgnorar"] != DBNull.Value ? reader["TablasAIgnorar"].ToString() : "",
+                            TipoMotor = reader["TipoMotor"] != DBNull.Value ? reader["TipoMotor"].ToString() : "MySQL",
+                            CadenaConexion = reader["CadenaConexion"] != DBNull.Value ? reader["CadenaConexion"].ToString() : ""
                         });
                     }
                 }
@@ -78,20 +79,21 @@ namespace SistemaRespaldo.DAL
             }
         }
 
-        // FUNCIÓN 4 ACTUALIZADA: Para que coincida con tu Web
         public bool InsertarBaseDeDatos(BaseDatos db)
         {
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
                 conexion.Open();
-                string query = "INSERT INTO BasesDatos (Nombre, EsCompleto, TablasAIgnorar) " +
-                               "VALUES (@nombre, @completo, @tablas)";
+                string query = "INSERT INTO BasesDatos (Nombre, EsCompleto, TablasAIgnorar, TipoMotor, CadenaConexion) " +
+                               "VALUES (@nombre, @completo, @tablas, @tipo, @cadena)";
 
                 using (MySqlCommand comando = new MySqlCommand(query, conexion))
                 {
                     comando.Parameters.AddWithValue("@nombre", db.Nombre);
                     comando.Parameters.AddWithValue("@completo", db.EsCompleto);
                     comando.Parameters.AddWithValue("@tablas", string.IsNullOrEmpty(db.TablasAIgnorar) ? (object)DBNull.Value : db.TablasAIgnorar);
+                    comando.Parameters.AddWithValue("@tipo", db.TipoMotor ?? "MySQL");
+                    comando.Parameters.AddWithValue("@cadena", db.CadenaConexion ?? (object)DBNull.Value);
 
                     return comando.ExecuteNonQuery() > 0;
                 }
@@ -102,7 +104,6 @@ namespace SistemaRespaldo.DAL
         {
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
-                // Asegúrate de que esta tabla 'HistorialLogs' exista en MySQL
                 string query = "INSERT INTO HistorialLogs (BaseDeDatos, Estado, Mensaje) VALUES (@db, @estado, @msj)";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
 
@@ -113,6 +114,42 @@ namespace SistemaRespaldo.DAL
                 conexion.Open();
                 return comando.ExecuteNonQuery() > 0;
             }
+        }
+
+        // --- ¡NUEVA FUNCIÓN AÑADIDA PARA LA PANTALLA WEB! ---
+        public List<HistorialLog> ObtenerLogs()
+        {
+            List<HistorialLog> lista = new List<HistorialLog>();
+
+            using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+            {
+                // Ordenamos por Fecha descendente para ver lo más reciente arriba. Límite de 50 para no saturar.
+                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, Fecha FROM HistorialLogs ORDER BY Fecha DESC LIMIT 50";
+                MySqlCommand comando = new MySqlCommand(query, conexion);
+
+                try
+                {
+                    conexion.Open();
+                    using (MySqlDataReader reader = comando.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            lista.Add(new HistorialLog
+                            {
+                                BaseDeDatos = reader["BaseDeDatos"].ToString(),
+                                Estado = reader["Estado"].ToString(),
+                                Mensaje = reader["Mensaje"].ToString(),
+                                Fecha = reader["Fecha"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha"]) : DateTime.MinValue
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error al obtener logs: " + ex.Message);
+                }
+            }
+            return lista;
         }
     }
 }

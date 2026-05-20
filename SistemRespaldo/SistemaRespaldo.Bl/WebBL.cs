@@ -52,6 +52,14 @@ public bool EliminarBaseDatos(int id)
     return dal.EliminarBaseDatos(id);
 }
 
+
+public List<HistorialLog> ObtenerHistorialLogs()
+{
+    // Llamamos a la DAL para traer los datos
+    SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
+    return dal.ObtenerLogs(); // Asegúrate de que en ConsultasDAL se llame ObtenerLogs
+}
+
     }
 
 }

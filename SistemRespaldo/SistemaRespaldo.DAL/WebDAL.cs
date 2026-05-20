@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using MySqlConnector;
 using SistemaRespaldo.EN;
@@ -15,7 +15,7 @@ public List<BaseDatos> ObtenerBasesDatos()
     using (var conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
     {
         conn.Open();
-        string sql = "SELECT Id, Nombre, EsCompleto, TablasAIgnorar FROM BasesDatos";
+        string sql = "SELECT Id, Nombre, EsCompleto, TablasAIgnorar, TipoMotor, CadenaConexion FROM BasesDatos";
         using (var cmd = new MySqlCommand(sql, conn))
         using (var reader = cmd.ExecuteReader())
         {
@@ -25,7 +25,9 @@ public List<BaseDatos> ObtenerBasesDatos()
                     Id = reader.GetInt32("Id"), 
                     Nombre = reader.GetString("Nombre"),
                     EsCompleto = reader.GetBoolean("EsCompleto"),
-                    TablasAIgnorar = reader.IsDBNull(reader.GetOrdinal("TablasAIgnorar")) ? "" : reader.GetString("TablasAIgnorar")
+                    TablasAIgnorar = reader.IsDBNull(reader.GetOrdinal("TablasAIgnorar")) ? "" : reader.GetString("TablasAIgnorar"),
+                    TipoMotor = reader.IsDBNull(reader.GetOrdinal("TipoMotor")) ? "MySQL" : reader.GetString("TipoMotor"),
+                    CadenaConexion = reader.IsDBNull(reader.GetOrdinal("CadenaConexion")) ? "" : reader.GetString("CadenaConexion")
                 });
             }
         }
@@ -39,12 +41,14 @@ public bool GuardarBaseDatos(BaseDatos db)
     using (var conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
     {
         conn.Open();
-        string sql = "INSERT INTO BasesDatos (Nombre, EsCompleto, TablasAIgnorar) VALUES (@nom, @comp, @ign)";
+        string sql = "INSERT INTO BasesDatos (Nombre, EsCompleto, TablasAIgnorar, TipoMotor, CadenaConexion) VALUES (@nom, @comp, @ign, @tipo, @cadena)";
         using (var cmd = new MySqlCommand(sql, conn))
         {
             cmd.Parameters.AddWithValue("@nom", db.Nombre);
             cmd.Parameters.AddWithValue("@comp", db.EsCompleto);
             cmd.Parameters.AddWithValue("@ign", db.TablasAIgnorar ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@tipo", db.TipoMotor ?? "MySQL");
+            cmd.Parameters.AddWithValue("@cadena", db.CadenaConexion ?? (object)DBNull.Value);
             return cmd.ExecuteNonQuery() > 0;
         }
     }

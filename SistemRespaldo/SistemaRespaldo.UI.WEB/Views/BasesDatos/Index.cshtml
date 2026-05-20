@@ -39,6 +39,19 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-bold text-secondary">Motor de Base de Datos</label>
+                            <select name="tipoMotor" id="tipoMotor" class="form-select" onchange="toggleCadenaConexion()">
+                                <option value="MySQL" selected>MySQL</option>
+                                <option value="MongoDB">MongoDB</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="divCadenaConexion" style="display: none;">
+                            <label class="form-label fw-bold text-secondary">Cadena de Conexión (MongoDB URI)</label>
+                            <input type="text" name="cadenaConexion" id="cadenaConexion" class="form-control" placeholder="Ej: mongodb://localhost:27017" />
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label fw-bold text-secondary">Tipo de Respaldo</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="tipoRespaldo" value="Completo" id="tipoComp" checked>
@@ -81,6 +94,7 @@
                                 <tr>
                                     <th class="ps-4">ID</th>
                                     <th>Nombre de Base</th>
+                                    <th>Motor</th>
                                     <th>Tipo</th>
                                     <th>Tablas Omitidas</th>
                                     <th class="text-center">Acciones</th>
@@ -103,6 +117,7 @@
                                         <tr>
                                             <td class="ps-4 text-muted small">#@db.Id</td>
                                             <td><span class="fw-bold">@db.Nombre</span></td>
+                                            <td><span class="badge bg-secondary">@(string.IsNullOrEmpty(db.TipoMotor) ? "MySQL" : db.TipoMotor)</span></td>
                                             <td>
                                                 @if (db.EsCompleto)
                                                 {
@@ -136,3 +151,21 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function toggleCadenaConexion() {
+            var tipoMotor = document.getElementById("tipoMotor").value;
+            var divCadenaConexion = document.getElementById("divCadenaConexion");
+            var inputCadenaConexion = document.getElementById("cadenaConexion");
+            
+            if (tipoMotor === "MongoDB") {
+                divCadenaConexion.style.display = "block";
+                inputCadenaConexion.required = true;
+            } else {
+                divCadenaConexion.style.display = "none";
+                inputCadenaConexion.required = false;
+            }
+        }
+    </script>
+}
