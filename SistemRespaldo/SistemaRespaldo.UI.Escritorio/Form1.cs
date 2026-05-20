@@ -7,6 +7,9 @@ namespace SistemaRespaldo.UI.Escritorio
 {
     public partial class Form1 : Form
     {
+
+        private bool cerrarRealmente = false;
+
         public Form1()
         {
             InitializeComponent();
@@ -95,6 +98,51 @@ namespace SistemaRespaldo.UI.Escritorio
                 // Esperamos un minuto antes de reactivar para evitar doble ejecución
                 System.Threading.Thread.Sleep(60000); 
                 timer1.Enabled = true;
+            }
+        }
+        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            this.Show(); // Muestra el form
+            this.WindowState = FormWindowState.Normal; // Lo regresa a su tamaño original
+            notifyIcon1.Visible = false; // Esconde el icono del reloj (opcional)
+        }
+
+        private void restaurarMotorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.Show();
+            this.WindowState = FormWindowState.Normal;
+            notifyIcon1.Visible = false;
+        }
+
+        private void salirPorCompletoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            cerrarRealmente = true; // Aquí sí le damos permiso de morir
+            Application.Exit();     // Cierra la aplicación de verdad
+        }
+
+        private void Form1_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // Si no presionaron "Salir por completo", cancelamos el cierre
+            if (!cerrarRealmente)
+            {
+                e.Cancel = true; // Cancela la muerte del programa
+                this.Hide();     // Esconde el formulario
+                notifyIcon1.Visible = true; // Muestra el icono junto al reloj
+            }
+        }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            // Si el usuario le da al botón de minimizar (-)
+            if (this.WindowState == FormWindowState.Minimized)
+            {
+                this.Hide();
+                notifyIcon1.Visible = true;
             }
         }
     }
