@@ -1,13 +1,13 @@
 using System;
 using System.Windows.Forms;
-using SistemaRespaldo.DAL; //
-using SistemaRespaldo.EN;  //
+using SistemaRespaldo.DAL;
+using SistemaRespaldo.EN;
+using SistemaRespaldo.BL; // Agregado por si tus motores están en esta capa
 
 namespace SistemaRespaldo.UI.Escritorio
 {
     public partial class Form1 : Form
     {
-
         private bool cerrarRealmente = false;
 
         public Form1()
@@ -16,9 +16,9 @@ namespace SistemaRespaldo.UI.Escritorio
         }
 
         // --- ESTE ES EL MÉTODO QUE EL DISEÑADOR BUSCA ---
-        // Si el error persiste, tenerlo aquí vacío lo solucionará
         private void Form1_Load(object sender, EventArgs e)
         {
+            
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -27,7 +27,6 @@ namespace SistemaRespaldo.UI.Escritorio
             {
                 MessageBox.Show("Iniciando prueba forzada...");
 
-                // --- CORRECCIÓN: Creamos el objeto que el motor espera ahora ---
                 var configuracionPrueba = new SistemaRespaldo.EN.ConfiguracionRespaldo
                 {
                     NombreBaseDatos = "SistemaRespaldos",
@@ -35,7 +34,6 @@ namespace SistemaRespaldo.UI.Escritorio
                     TablasAIgnorar = "" // Sin ignorar nada por ahora
                 };
 
-                // Ahora enviamos el objeto completo, no solo el string
                 var resultado = RespaldoMotor.GenerarRespaldo(configuracionPrueba);
 
                 ConsultasDAL dal = new ConsultasDAL();
@@ -57,6 +55,8 @@ namespace SistemaRespaldo.UI.Escritorio
         private void timer1_Tick(object sender, EventArgs e)
         {
             TimeSpan horaActual = new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
+
+            // Seguimos usando ConsultasDAL para los horarios y logs
             ConsultasDAL dal = new ConsultasDAL();
             var horariosGuardados = dal.ObtenerHorarios();
 
@@ -74,15 +74,26 @@ namespace SistemaRespaldo.UI.Escritorio
             {
                 timer1.Enabled = false; // Pausa para evitar bucles en el mismo minuto
 
-                // Leemos TODAS las configuraciones de bases de datos
-                var listaConfig = dal.ObtenerBasesDeDatos();
+                // --- INTEGRACIÓN MONGODB: Usamos WebDAL para leer las nuevas columnas ---
+                WebDAL webDal = new WebDAL();
+                var listaConfig = webDal.ObtenerBasesDeDatosActualizado();
 
                 foreach (var config in listaConfig)
                 {
-                    // Ejecutamos el motor pasando el objeto de configuración (Día 7)
-                    var resultado = RespaldoMotor.GenerarRespaldo(config);
+                    var resultado = (exito: false, mensaje: "");
 
-                    // --- DÍA 8: GUARDADO DE LOG SEGÚN RESULTADO ---
+                    // --- EL SEMÁFORO: Decidimos qué motor ejecutar ---
+                    if (config.TipoMotor == "MongoDB")
+                    {
+                        resultado = RespaldoMongoMotor.GenerarRespaldo(config);
+                    }
+                    else
+                    {
+                        // Si es "MySQL" o viene vacío, usamos el motor original
+                        resultado = RespaldoMotor.GenerarRespaldo(config);
+                    }
+
+                    // --- GUARDADO DE LOG: Se mantiene intacto para ambos motores ---
                     HistorialLog log = new HistorialLog
                     {
                         BaseDeDatos = config.NombreBaseDatos,
@@ -103,18 +114,15 @@ namespace SistemaRespaldo.UI.Escritorio
             {
                 MessageBox.Show("Iniciando prueba forzada...");
 
-                // 1. Creamos la configuración para la prueba
                 var configPrueba = new SistemaRespaldo.EN.ConfiguracionRespaldo
                 {
                     NombreBaseDatos = "SistemaRespaldos",
-                    TipoRespaldoCompletoOParcial = false, // ¡FALSO para que sea parcial!
-                    TablasAIgnorar = "horarios" // ¡Aquí le decimos la tabla!
+                    TipoRespaldoCompletoOParcial = false,
+                    TablasAIgnorar = "horarios"
                 };
 
-                // 2. Ahora enviamos el objeto 'configPrueba' en lugar del string con comillas
                 var resultado = RespaldoMotor.GenerarRespaldo(configPrueba);
 
-                // 3. Registramos el Log usando la DAL
                 SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
                 dal.InsertarLog(new SistemaRespaldo.EN.HistorialLog
                 {
@@ -133,9 +141,9 @@ namespace SistemaRespaldo.UI.Escritorio
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            this.Show(); // Muestra el form
-            this.WindowState = FormWindowState.Normal; // Lo regresa a su tamaño original
-            notifyIcon1.Visible = false; // Esconde el icono del reloj (opcional)
+            this.Show();
+            this.WindowState = FormWindowState.Normal;
+            notifyIcon1.Visible = false;
         }
 
         private void restaurarMotorToolStripMenuItem_Click(object sender, EventArgs e)
@@ -147,29 +155,33 @@ namespace SistemaRespaldo.UI.Escritorio
 
         private void salirPorCompletoToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            cerrarRealmente = true; // Aquí sí le damos permiso de morir
-            Application.Exit();     // Cierra la aplicación de verdad
+            cerrarRealmente = true;
+            Application.Exit();
         }
 
         private void Form1_Load_1(object sender, EventArgs e)
         {
-
+            try
+            {
+                // Se registra en el inicio de Windows del usuario actual
+                Microsoft.Win32.RegistryKey rk = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+                rk.SetValue("MotorRespaldosApp", $"\"{Application.ExecutablePath}\"");
+            }
+            catch { /* Ignoramos si no hay permisos */ }
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // Si no presionaron "Salir por completo", cancelamos el cierre
             if (!cerrarRealmente)
             {
-                e.Cancel = true; // Cancela la muerte del programa
-                this.Hide();     // Esconde el formulario
-                notifyIcon1.Visible = true; // Muestra el icono junto al reloj
+                e.Cancel = true;
+                this.Hide();
+                notifyIcon1.Visible = true;
             }
         }
 
         private void Form1_Resize(object sender, EventArgs e)
         {
-            // Si el usuario le da al botón de minimizar (-)
             if (this.WindowState == FormWindowState.Minimized)
             {
                 this.Hide();

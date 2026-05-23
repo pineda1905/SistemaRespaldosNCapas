@@ -10,5 +10,7 @@ namespace SistemaRespaldo.EN
         public string NombreBaseDatos { get; set; }
         public bool TipoRespaldoCompletoOParcial { get; set; }
         public string TablasAIgnorar { get; set; }
+        public string TipoMotor { get; set; }
+        public string CadenaConexion { get; set; }
     }
 }
