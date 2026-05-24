@@ -1,4 +1,6 @@
-﻿@{
+@model IEnumerable<SistemaRespaldo.EN.HistorialLog>
+
+@{
     ViewData["Title"] = "Configurar Horario de Respaldo";
 }
 
@@ -41,26 +43,37 @@
         </div>
     </div>
 </div>
-@model IEnumerable<SistemaRespaldo.EN.HistorialLog>
 
+<!-- ==========================================
+     HISTORIAL DE RESPALDOS (Actualizado Día 12)
+     ========================================== -->
 <div class="card shadow border-0 mt-4">
-    <div class="card-header bg-dark text-white d-flex justify-content-between">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">📊 Historial Reciente de Respaldos</h5>
-        <a href="javascript:location.reload()" class="btn btn-sm btn-outline-light">Actualizar</a>
+        <a href="javascript:location.reload()" class="btn btn-sm btn-outline-light">🔄 Actualizar</a>
     </div>
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead class="table-light">
                 <tr>
                     <th>Base de Datos</th>
+                    <th>Motor</th>
                     <th>Estado</th>
                     <th>Fecha y Mensaje</th>
+                    <th class="text-center">Acción</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var log in Model) {
                     <tr>
                         <td><strong>@log.BaseDeDatos</strong></td>
+                        <td>
+                            @if(log.TipoMotor == "MongoDB") {
+                                <span class="badge bg-success">🍃 MongoDB</span>
+                            } else {
+                                <span class="badge bg-primary">🐬 MySQL</span>
+                            }
+                        </td>
                         <td>
                             @if(log.Estado == "Exito") {
                                 <span class="badge bg-success">Copiado ✅</span>
@@ -69,11 +82,30 @@
                             }
                         </td>
                         <td>
-                            <small class="text-muted d-block">Mensaje: @log.Mensaje</small>
+                            <small class="text-muted d-block">
+                                <strong>@log.Fecha.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </small>
+                            <small class="text-muted d-block">@log.Mensaje</small>
+                        </td>
+                        <td class="text-center">
+                            @if(log.Estado == "Exito") {
+                                <a asp-controller="Respaldos" asp-action="Descargar" asp-route-id="@log.Id"
+                                   class="btn btn-sm btn-outline-primary" title="Descargar archivo de respaldo">
+                                    ⬇️ Descargar
+                                </a>
+                            } else {
+                                <span class="text-muted">—</span>
+                            }
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
+
+        @if (!Model.Any()) {
+            <div class="text-center text-muted py-4">
+                <p>No hay registros de respaldo aún. Ejecute un respaldo desde la aplicación de escritorio.</p>
+            </div>
+        }
     </div>
 </div>

@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Diagnostics;
+using System.IO;
 using SistemaRespaldo.EN;
 
 namespace SistemaRespaldo.BL
@@ -10,10 +11,16 @@ namespace SistemaRespaldo.BL
         {
             try
             {
-                // Usamos la extensión .archive para que sea 1 solo archivo
-                string rutaSalida = $@"C:\RespaldosMySQL\Mongo_{config.NombreBaseDatos}_{DateTime.Now:yyyyMMdd_HHmmss}.archive";
+                // Usamos la ruta de guardado del config.json (la misma carpeta para MySQL y Mongo)
+                string rutaGuardado = SistemaRespaldo.UI.Escritorio.ConfiguracionMotor.RutaGuardadoRespaldos;
 
-                // Armamos el comando con la URI
+                if (!Directory.Exists(rutaGuardado))
+                    Directory.CreateDirectory(rutaGuardado);
+
+                // Generamos un archivo .archive con nombre descriptivo
+                string rutaSalida = Path.Combine(rutaGuardado, $"Mongo_{config.NombreBaseDatos}_{DateTime.Now:yyyyMMdd_HHmmss}.archive");
+
+                // Armamos el comando con la URI y --archive
                 string argumentos = $"--uri=\"{config.CadenaConexion}\" --archive=\"{rutaSalida}\"";
 
                 ProcessStartInfo psi = new ProcessStartInfo
@@ -21,16 +28,19 @@ namespace SistemaRespaldo.BL
                     FileName = "mongodump",
                     Arguments = argumentos,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    RedirectStandardError = true
                 };
 
                 using (Process proceso = Process.Start(psi))
                 {
+                    string errorCapturado = proceso.StandardError.ReadToEnd();
                     proceso.WaitForExit();
+
                     if (proceso.ExitCode == 0)
-                        return (true, "Respaldo MongoDB completado con éxito");
+                        return (true, "Respaldo MongoDB completado con éxito en: " + rutaSalida);
                     else
-                        return (false, "Error mongodump. Código: " + proceso.ExitCode);
+                        return (false, "Error mongodump. Código: " + proceso.ExitCode + " - " + errorCapturado);
                 }
             }
             catch (Exception ex)
