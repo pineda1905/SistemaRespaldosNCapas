@@ -51,7 +51,8 @@ namespace SistemaRespaldo.UI.Escritorio
                 {
                     BaseDeDatos = configPrueba.NombreBaseDatos,
                     Estado = resultado.exito ? "Exito" : "Error",
-                    Mensaje = resultado.mensaje
+                    Mensaje = resultado.mensaje,
+                    TipoMotor = configPrueba.TipoMotor ?? "MySQL"
                 });
 
                 MessageBox.Show($"Resultado: {resultado.mensaje}");
@@ -107,7 +108,8 @@ namespace SistemaRespaldo.UI.Escritorio
                     {
                         BaseDeDatos = config.NombreBaseDatos,
                         Estado = resultado.exito ? "Exito" : "Error",
-                        Mensaje = resultado.mensaje
+                        Mensaje = resultado.mensaje,
+                        TipoMotor = config.TipoMotor ?? "MySQL"
                     });
                 }
 
