@@ -19,8 +19,9 @@ namespace SistemaRespaldo.UI.WEB.Controllers
             }
             catch (Exception ex)
             {
-                // Si falla la conexión a MySQL, enviamos el error a la pantalla
-                ViewBag.Error = "No se pudieron cargar los datos: " + ex.Message;
+                // Loguear el detalle real en el servidor (invisible al usuario)
+                Console.WriteLine($"[ERROR] BasesDatos/Index: {ex}");
+                ViewBag.Error = "Ocurrió un error interno al cargar los datos. Contacte al administrador.";
                 return View(new System.Collections.Generic.List<BaseDatos>());
             }
         }
@@ -44,15 +45,24 @@ namespace SistemaRespaldo.UI.WEB.Controllers
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error: " + ex.Message;
+                Console.WriteLine($"[ERROR] BasesDatos/Guardar: {ex}");
+                TempData["Error"] = "Ocurrió un error interno al guardar la configuración. Contacte al administrador.";
             }
             return RedirectToAction("Index");
         }
 
         public IActionResult Eliminar(int id)
         {
-            bl.EliminarBaseDatos(id); // Recuerda agregar este método también en la BL
-            TempData["Mensaje"] = "Base de datos eliminada del monitoreo.";
+            try
+            {
+                bl.EliminarBaseDatos(id);
+                TempData["Mensaje"] = "Base de datos eliminada del monitoreo.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] BasesDatos/Eliminar ID {id}: {ex}");
+                TempData["Error"] = "No se pudo eliminar la configuración. Contacte al administrador.";
+            }
             return RedirectToAction("Index");
         }
     }

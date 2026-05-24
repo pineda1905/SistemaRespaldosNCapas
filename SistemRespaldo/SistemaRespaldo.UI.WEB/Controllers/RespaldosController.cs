@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.IO;
-using System.Collections.Generic; // Necesario para List<>
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using SistemaRespaldo.EN;
 using SistemaRespaldo.BL;
+using SistemaRespaldo.DAL;
 
 namespace SistemaRespaldo.UI.WEB.Controllers
 {
@@ -28,8 +29,9 @@ namespace SistemaRespaldo.UI.WEB.Controllers
             }
             catch (Exception ex)
             {
-                // En caso de error, mandamos una lista vacía y el mensaje de error
-                ViewBag.Error = "No se pudieron cargar los logs: " + ex.Message;
+                // Loguear el detalle real en el servidor (invisible al usuario)
+                Console.WriteLine($"[ERROR] Index: {ex}");
+                ViewBag.Error = "Ocurrió un error interno al cargar los registros. Contacte al administrador.";
                 return View(new List<HistorialLog>());
             }
         }
@@ -61,7 +63,8 @@ namespace SistemaRespaldo.UI.WEB.Controllers
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error del sistema: " + ex.Message;
+                Console.WriteLine($"[ERROR] GuardarHorario: {ex}");
+                TempData["Error"] = "Ocurrió un error interno al guardar el horario. Contacte al administrador.";
                 return RedirectToAction("Index");
             }
         }
@@ -76,7 +79,7 @@ namespace SistemaRespaldo.UI.WEB.Controllers
 
                 if (log == null)
                 {
-                    TempData["Error"] = "No se encontró el registro de log con ID: " + id;
+                    TempData["Error"] = "No se encontró el registro solicitado.";
                     return RedirectToAction("Index");
                 }
 
@@ -87,33 +90,56 @@ namespace SistemaRespaldo.UI.WEB.Controllers
                 }
 
                 // Extraemos la ruta del archivo desde el campo Mensaje
-                // El formato del mensaje es: "Respaldo exitoso en: /ruta/al/archivo.sql"
-                // o "Respaldo MongoDB completado con éxito en: /ruta/al/archivo.archive"
                 string rutaArchivo = ExtraerRutaDeArchivo(log.Mensaje);
 
                 if (string.IsNullOrEmpty(rutaArchivo))
                 {
-                    TempData["Error"] = "No se pudo determinar la ruta del archivo desde el mensaje del log.";
+                    TempData["Error"] = "No se pudo determinar la ruta del archivo de respaldo.";
+                    return RedirectToAction("Index");
+                }
+
+                // =====================================================
+                // SEGURIDAD: Validación contra Path Traversal (Hallazgo #1)
+                // Verificamos que la ruta resuelta esté DENTRO del directorio
+                // autorizado de respaldos. Esto previene lectura de archivos
+                // arbitrarios como /etc/passwd o C:\Windows\System32.
+                // =====================================================
+                string rutaBase = ConfiguracionHelper.RutaGuardado;
+                string rutaCompleta = Path.GetFullPath(rutaArchivo);
+                string rutaBaseCompleta = Path.GetFullPath(rutaBase);
+
+                // Asegurar que la ruta base termine con separador para evitar
+                // falsos positivos (ej. /home/alex/Desktop/RespaldosMaliciosos)
+                if (!rutaBaseCompleta.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                {
+                    rutaBaseCompleta += Path.DirectorySeparatorChar;
+                }
+
+                if (!rutaCompleta.StartsWith(rutaBaseCompleta, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[SEGURIDAD] Intento de Path Traversal bloqueado. Ruta solicitada: {rutaCompleta} | Ruta base: {rutaBaseCompleta}");
+                    TempData["Error"] = "Acceso denegado: la ruta del archivo no pertenece al directorio de respaldos.";
                     return RedirectToAction("Index");
                 }
 
                 // Verificamos que el archivo exista en disco
-                if (!System.IO.File.Exists(rutaArchivo))
+                if (!System.IO.File.Exists(rutaCompleta))
                 {
-                    TempData["Error"] = $"El archivo ya no existe en el disco: {rutaArchivo}";
+                    TempData["Error"] = "El archivo de respaldo ya no existe en el disco.";
                     return RedirectToAction("Index");
                 }
 
                 // Determinamos el tipo MIME según la extensión
-                string nombreArchivo = Path.GetFileName(rutaArchivo);
+                string nombreArchivo = Path.GetFileName(rutaCompleta);
                 string contentType = "application/octet-stream"; // Tipo genérico para descarga
 
                 // Retornamos el archivo físico para que el navegador lo descargue
-                return PhysicalFile(rutaArchivo, contentType, nombreArchivo);
+                return PhysicalFile(rutaCompleta, contentType, nombreArchivo);
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error al intentar descargar: " + ex.Message;
+                Console.WriteLine($"[ERROR] Descargar ID {id}: {ex}");
+                TempData["Error"] = "Ocurrió un error interno al intentar descargar el archivo. Contacte al administrador.";
                 return RedirectToAction("Index");
             }
         }
