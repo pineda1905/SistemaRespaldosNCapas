@@ -1,0 +1,26 @@
+# =============================================
+# .gitignore — Sistema de Respaldos N-Capas
+# =============================================
+
+# --- Archivos de configuración con credenciales ---
+appsettings.json
+appsettings.Development.json
+config.json
+
+# --- Compilados y dependencias ---
+bin/
+obj/
+*.user
+*.suo
+
+# --- IDE ---
+.vs/
+*.csproj.user
+
+# --- Archivos de respaldo generados ---
+*.sql
+*.archive
+
+# --- Sistema ---
+.DS_Store
+Thumbs.db

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using SistemaRespaldo.EN;
 using SistemaRespaldo.DAL;
@@ -58,6 +58,17 @@ public List<HistorialLog> ObtenerHistorialLogs()
     // Llamamos a la DAL para traer los datos
     SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
     return dal.ObtenerLogs(); // Asegúrate de que en ConsultasDAL se llame ObtenerLogs
+}
+
+// Día 12: Buscar un log específico por ID (para la descarga del archivo)
+public HistorialLog ObtenerLogPorId(int id)
+{
+    if (id <= 0)
+    {
+        throw new ArgumentException("El ID del log no es válido.");
+    }
+    SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
+    return dal.ObtenerLogPorId(id);
 }
 
     }

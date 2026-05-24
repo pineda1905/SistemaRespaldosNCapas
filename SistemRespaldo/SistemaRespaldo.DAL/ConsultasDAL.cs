@@ -104,19 +104,20 @@ namespace SistemaRespaldo.DAL
         {
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
-                string query = "INSERT INTO HistorialLogs (BaseDeDatos, Estado, Mensaje) VALUES (@db, @estado, @msj)";
+                string query = "INSERT INTO HistorialLogs (BaseDeDatos, Estado, Mensaje, TipoMotor) VALUES (@db, @estado, @msj, @tipo)";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
 
                 comando.Parameters.AddWithValue("@db", log.BaseDeDatos);
                 comando.Parameters.AddWithValue("@estado", log.Estado);
                 comando.Parameters.AddWithValue("@msj", log.Mensaje);
+                comando.Parameters.AddWithValue("@tipo", log.TipoMotor ?? "MySQL");
 
                 conexion.Open();
                 return comando.ExecuteNonQuery() > 0;
             }
         }
 
-        // --- ¡NUEVA FUNCIÓN AÑADIDA PARA LA PANTALLA WEB! ---
+        // --- FUNCIÓN PARA LA PANTALLA WEB (Actualizada Día 12 con TipoMotor) ---
         public List<HistorialLog> ObtenerLogs()
         {
             List<HistorialLog> lista = new List<HistorialLog>();
@@ -124,7 +125,7 @@ namespace SistemaRespaldo.DAL
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
                 // Ordenamos por Fecha descendente para ver lo más reciente arriba. Límite de 50 para no saturar.
-                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, Fecha FROM HistorialLogs ORDER BY Fecha DESC LIMIT 50";
+                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, Fecha, TipoMotor FROM HistorialLogs ORDER BY Fecha DESC LIMIT 50";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
 
                 try
@@ -136,10 +137,12 @@ namespace SistemaRespaldo.DAL
                         {
                             lista.Add(new HistorialLog
                             {
+                                Id = Convert.ToInt32(reader["Id"]),
                                 BaseDeDatos = reader["BaseDeDatos"].ToString(),
                                 Estado = reader["Estado"].ToString(),
                                 Mensaje = reader["Mensaje"].ToString(),
-                                Fecha = reader["Fecha"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha"]) : DateTime.MinValue
+                                Fecha = reader["Fecha"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha"]) : DateTime.MinValue,
+                                TipoMotor = reader["TipoMotor"] != DBNull.Value ? reader["TipoMotor"].ToString() : "MySQL"
                             });
                         }
                     }
@@ -150,6 +153,42 @@ namespace SistemaRespaldo.DAL
                 }
             }
             return lista;
+        }
+
+        // --- Día 12: Buscar un log específico por su ID (para descarga) ---
+        public HistorialLog ObtenerLogPorId(int id)
+        {
+            using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+            {
+                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, Fecha, TipoMotor FROM HistorialLogs WHERE Id = @id";
+                MySqlCommand comando = new MySqlCommand(query, conexion);
+                comando.Parameters.AddWithValue("@id", id);
+
+                try
+                {
+                    conexion.Open();
+                    using (MySqlDataReader reader = comando.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new HistorialLog
+                            {
+                                Id = Convert.ToInt32(reader["Id"]),
+                                BaseDeDatos = reader["BaseDeDatos"].ToString(),
+                                Estado = reader["Estado"].ToString(),
+                                Mensaje = reader["Mensaje"].ToString(),
+                                Fecha = reader["Fecha"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha"]) : DateTime.MinValue,
+                                TipoMotor = reader["TipoMotor"] != DBNull.Value ? reader["TipoMotor"].ToString() : "MySQL"
+                            };
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error al obtener log por ID: " + ex.Message);
+                }
+            }
+            return null;
         }
     }
 }
