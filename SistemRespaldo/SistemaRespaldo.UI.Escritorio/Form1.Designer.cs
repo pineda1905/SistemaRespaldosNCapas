@@ -92,7 +92,7 @@ namespace SistemaRespaldo.UI.Escritorio
             Name = "Form1";
             Text = "Form1";
             FormClosing += Form1_FormClosing;
-            Load += Form1_Load_1;
+            Load += Form1_Load;
             Resize += Form1_Resize;
             contextMenuStrip1.ResumeLayout(false);
             ResumeLayout(false);
