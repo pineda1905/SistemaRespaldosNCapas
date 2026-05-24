@@ -1,0 +1,22 @@
+# Carpetas de compilación y salida de datos
+bin/
+obj/
+packages/
+
+# Configuraciones locales y temporales del IDE
+.vs/
+.vscode/
+.antigravity/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Archivos de bases de datos locales o temporales
+*.log
+*.sqlite
+*.tmp
+
+# Carpetas de caché del sistema operativo y node (si aplica)
+.cache/
+node_modules/
