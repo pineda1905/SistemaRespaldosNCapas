@@ -1,18 +1,17 @@
 using System;
 using System.Windows.Forms;
-using SistemaRespaldo.EN;
-using SistemaRespaldo.DAL;
-using SistemaRespaldo.UI.Escritorio;
 
 namespace SistemaRespaldo.UI.Escritorio
 {
     internal static class Program
     {
+        /// <summary>
+        ///  Punto de entrada principal de la aplicación Windows Forms.
+        /// </summary>
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            ApplicationConfiguration.Initialize();
             Application.Run(new Form1());
         }
     }

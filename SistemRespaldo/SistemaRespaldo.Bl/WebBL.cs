@@ -79,6 +79,18 @@ public BaseDatos ObtenerBaseDatosPorId(int id)
     return dal.ObtenerBaseDatosPorId(id);
 }
 
+// Día 12: Buscar un log específico por ID (para la descarga del archivo)
+public HistorialLog ObtenerLogPorId(int id)
+{
+    if (id <= 0)
+    {
+        throw new ArgumentException("El ID del log no es válido.");
+    }
+    SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
+    return dal.ObtenerLogPorId(id);
+}
+}
+
     }
 
 }

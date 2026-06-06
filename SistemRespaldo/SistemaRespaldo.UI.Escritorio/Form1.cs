@@ -2,9 +2,7 @@ using System;
 using System.Windows.Forms;
 using SistemaRespaldo.DAL; 
 using SistemaRespaldo.EN;  
-using SistemaRespaldo.DAL;
-using SistemaRespaldo.EN;
-using SistemaRespaldo.BL; // Agregado por si tus motores están en esta capa
+using SistemaRespaldo.BL; 
 
 namespace SistemaRespaldo.UI.Escritorio
 {
@@ -17,11 +15,15 @@ namespace SistemaRespaldo.UI.Escritorio
             InitializeComponent();
         }
 
-        // --- ESTE ES EL MÉTODO QUE EL DISEÑADOR BUSCA ---
         private void Form1_Load(object sender, EventArgs e)
         {
-            // El motor arranca el Timer automáticamente si lo tienes configurado en el diseñador
-            
+            // --- TAREA DEL CRONOGRAMA: AUTO-ARRANQUE EN SEGUNDO PLANO ---
+            try
+            {
+                Microsoft.Win32.RegistryKey rk = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+                rk.SetValue("MotorRespaldosApp", $"\"{Application.ExecutablePath}\"");
+            }
+            catch { /* Ignoramos si el usuario no tiene permisos */ }
         }
 
         // --- BOTÓN DE PRUEBA MANUAL ---
@@ -31,12 +33,13 @@ namespace SistemaRespaldo.UI.Escritorio
             {
                 MessageBox.Show("Iniciando prueba de respaldo manual...");
 
-                // Usamos la nueva entidad 'BaseDatos'
-                var configPrueba = new BaseDatos
+                // Entidad unificada
+                var configPrueba = new ConfiguracionRespaldo
                 {
-                    Nombre = "SistemaRespaldos",
-                    EsCompleto = false, // Prueba parcial
-                    TablasAIgnorar = "HistorialLogs" // Ejemplo de tabla a ignorar
+                    NombreBaseDatos = "SistemaRespaldos",
+                    TipoRespaldoCompletoOParcial = false, 
+                    TablasAIgnorar = "HistorialLogs",
+                    TipoMotor = "MySQL" // Por defecto en pruebas manuales
                 };
 
                 // Enviamos al motor
@@ -46,9 +49,10 @@ namespace SistemaRespaldo.UI.Escritorio
                 ConsultasDAL dal = new ConsultasDAL();
                 dal.InsertarLog(new HistorialLog
                 {
-                    BaseDeDatos = configPrueba.Nombre,
+                    BaseDeDatos = configPrueba.NombreBaseDatos,
                     Estado = resultado.exito ? "Exito" : "Error",
-                    Mensaje = resultado.mensaje
+                    Mensaje = resultado.mensaje,
+                    TipoMotor = configPrueba.TipoMotor ?? "MySQL"
                 });
 
                 MessageBox.Show($"Resultado: {resultado.mensaje}");
@@ -62,10 +66,7 @@ namespace SistemaRespaldo.UI.Escritorio
         // --- EL RELOJ QUE REVISA LOS HORARIOS ---
         private void timer1_Tick(object sender, EventArgs e)
         {
-            // Solo comparamos Horas y Minutos (segundos a 0)
             TimeSpan horaActual = new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
-
-            // Seguimos usando ConsultasDAL para los horarios y logs
             ConsultasDAL dal = new ConsultasDAL();
             
             var horariosGuardados = dal.ObtenerHorarios();
@@ -84,34 +85,34 @@ namespace SistemaRespaldo.UI.Escritorio
             {
                 timer1.Enabled = false; // Pausar para que no se repita en el mismo minuto
 
-                // Obtenemos todas las bases de datos configuradas desde tu Web
-                var listaConfig = dal.ObtenerBasesDeDatos();
+                // Obtenemos las bases usando WebDAL para que traiga la columna TipoMotor de Mongo
+                WebDAL webDal = new WebDAL();
+                var listaConfig = webDal.ObtenerBasesDeDatosActualizado();
 
                 foreach (var config in listaConfig)
                 {
                     var resultado = (exito: false, mensaje: "");
 
-                    // --- EL SEMÁFORO: Decidimos qué motor ejecutar ---
+                    // --- EL SEMÁFORO DE PINEDA (MySQL vs MongoDB) ---
                     if (config.TipoMotor == "MongoDB")
                     {
                         resultado = RespaldoMongoMotor.GenerarRespaldo(config);
                     }
                     else
                     {
-                        // Si es "MySQL" o viene vacío, usamos el motor original
                         resultado = RespaldoMotor.GenerarRespaldo(config);
                     }
 
-                    // --- GUARDADO DE LOG: Se mantiene intacto para ambos motores ---
+                    // --- GUARDADO DE LOG (Sirve para ambos) ---
                     dal.InsertarLog(new HistorialLog
                     {
-                        BaseDeDatos = config.Nombre,
+                        BaseDeDatos = config.NombreBaseDatos,
                         Estado = resultado.exito ? "Exito" : "Error",
-                        Mensaje = resultado.mensaje
+                        Mensaje = resultado.mensaje,
+                        TipoMotor = config.TipoMotor ?? "MySQL"
                     });
                 }
 
-                // Esperamos un minuto antes de reactivar para evitar doble ejecución
                 System.Threading.Thread.Sleep(60000); 
                 timer1.Enabled = true;
             }
@@ -147,7 +148,6 @@ namespace SistemaRespaldo.UI.Escritorio
                 MessageBox.Show($"Error en el botón: {ex.Message}");
             }
         }
-
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             this.Show();
@@ -166,17 +166,6 @@ namespace SistemaRespaldo.UI.Escritorio
         {
             cerrarRealmente = true;
             Application.Exit();
-        }
-
-        private void Form1_Load_1(object sender, EventArgs e)
-        {
-            try
-            {
-                // Se registra en el inicio de Windows del usuario actual
-                Microsoft.Win32.RegistryKey rk = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
-                rk.SetValue("MotorRespaldosApp", $"\"{Application.ExecutablePath}\"");
-            }
-            catch { /* Ignoramos si no hay permisos */ }
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)

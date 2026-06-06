@@ -8,21 +8,36 @@ namespace SistemaRespaldo.BL
 {
     public class RespaldoMongoMotor
     {
-        public static (bool exito, string mensaje) GenerarRespaldo(BaseDatos config)
+        // Sobrecarga para compatibilidad con BaseDatos
+        public static (bool exito, string mensaje) GenerarRespaldo(BaseDatos db)
+        {
+            var config = new ConfiguracionRespaldo
+            {
+                NombreBaseDatos = db.Nombre,
+                TipoRespaldoCompletoOParcial = db.EsCompleto,
+                TablasAIgnorar = db.TablasAIgnorar,
+                TipoMotor = db.TipoMotor,
+                CadenaConexion = db.CadenaConexion
+            };
+            return GenerarRespaldo(config);
+        }
+
+        // Método principal
+        public static (bool exito, string mensaje) GenerarRespaldo(ConfiguracionRespaldo config)
         {
             try
             {
-                if (!Directory.Exists(ConfiguracionMotor.RutaGuardadoRespaldos))
-                {
-                    Directory.CreateDirectory(ConfiguracionMotor.RutaGuardadoRespaldos);
-                }
+                // Usamos la ruta de guardado del config.json (la misma carpeta para MySQL y Mongo)
+                string rutaGuardado = SistemaRespaldo.UI.Escritorio.ConfiguracionMotor.RutaGuardadoRespaldos;
 
-                string fecha = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                string rutaSalida = Path.Combine(ConfiguracionMotor.RutaGuardadoRespaldos, $"{config.Nombre}_{fecha}.gz");
+                if (!Directory.Exists(rutaGuardado))
+                    Directory.CreateDirectory(rutaGuardado);
 
-                // Construimos los argumentos para ejecutar mongodump localmente para la base de datos especificada.
-                // Usamos --db para especificar la base de datos, --archive para guardar en un único archivo y --gzip para comprimir.
-                string argumentos = $"--db {config.Nombre} --archive=\"{rutaSalida}\" --gzip";
+                // Generamos un archivo .archive con nombre descriptivo
+                string rutaSalida = Path.Combine(rutaGuardado, $"Mongo_{config.NombreBaseDatos}_{DateTime.Now:yyyyMMdd_HHmmss}.archive");
+
+                // Armamos el comando con la URI y --archive
+                string argumentos = $"--uri=\"{config.CadenaConexion}\" --archive=\"{rutaSalida}\"";
 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
@@ -44,13 +59,9 @@ namespace SistemaRespaldo.BL
                     proceso.WaitForExit();
 
                     if (proceso.ExitCode == 0)
-                    {
-                        return (true, "Respaldo MongoDB completado con éxito. Archivo: " + rutaSalida);
-                    }
+                        return (true, "Respaldo MongoDB completado con éxito en: " + rutaSalida);
                     else
-                    {
-                        return (false, $"Error mongodump. Código: {proceso.ExitCode}. Detalle: {errorCapturado}");
-                    }
+                        return (false, "Error mongodump. Código: " + proceso.ExitCode + " - " + errorCapturado);
                 }
             }
             catch (Exception ex)
