@@ -93,4 +93,3 @@ public HistorialLog ObtenerLogPorId(int id)
 
     }
 
-}
