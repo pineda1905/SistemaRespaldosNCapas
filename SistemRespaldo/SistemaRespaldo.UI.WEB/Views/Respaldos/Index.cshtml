@@ -1,4 +1,6 @@
-﻿@{
+@model IEnumerable<SistemaRespaldo.EN.HistorialLog>
+
+@{
     ViewData["Title"] = "Configurar Horario de Respaldo";
 }
 
@@ -41,39 +43,111 @@
         </div>
     </div>
 </div>
-@model IEnumerable<SistemaRespaldo.EN.HistorialLog>
 
 <div class="card shadow border-0 mt-4">
-    <div class="card-header bg-dark text-white d-flex justify-content-between">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">📊 Historial Reciente de Respaldos</h5>
         <a href="javascript:location.reload()" class="btn btn-sm btn-outline-light">Actualizar</a>
     </div>
+    
+    <!-- Filtros del lado del cliente -->
+    <div class="p-3 bg-light border-bottom">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label for="buscarDb" class="form-label fw-bold text-secondary">Buscar por Base de Datos</label>
+                <input type="text" id="buscarDb" class="form-control" placeholder="Escribe el nombre de la base de datos a buscar..." autocomplete="off" />
+            </div>
+            <div class="col-md-4">
+                <label for="filtrarEstado" class="form-label fw-bold text-secondary">Filtrar por Estado</label>
+                <select id="filtrarEstado" class="form-select">
+                    <option value="Todos">Todos</option>
+                    <option value="Exito">Exito</option>
+                    <option value="Error">Error</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Base de Datos</th>
-                    <th>Estado</th>
-                    <th>Fecha y Mensaje</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var log in Model) {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
                     <tr>
-                        <td><strong>@log.BaseDeDatos</strong></td>
-                        <td>
-                            @if(log.Estado == "Exito") {
-                                <span class="badge bg-success">Copiado ✅</span>
-                            } else {
-                                <span class="badge bg-danger">Falló ❌</span>
-                            }
-                        </td>
-                        <td>
-                            <small class="text-muted d-block">Mensaje: @log.Mensaje</small>
-                        </td>
+                        <th class="ps-4">Base de Datos</th>
+                        <th>Estado</th>
+                        <th>Fecha y Mensaje</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                No hay registros de historial de respaldos disponibles.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var log in Model) {
+                            <tr class="log-row" data-db="@log.BaseDeDatos" data-estado="@log.Estado">
+                                <td class="ps-4"><strong>@log.BaseDeDatos</strong></td>
+                                <td>
+                                    @if(log.Estado == "Exito") {
+                                        <span class="badge bg-success px-3">Copiado ✅</span>
+                                    } else {
+                                        <span class="badge bg-danger px-3">Falló ❌</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small class="text-muted d-block fw-bold">Fecha: @(log.Fecha != DateTime.MinValue ? log.Fecha.ToString("dd/MM/yyyy HH:mm:ss") : "---")</small>
+                                    <small class="text-muted d-block">Mensaje: @log.Mensaje</small>
+                                </td>
+                                <td class="text-center">
+                                    <form asp-controller="Respaldos" asp-action="EliminarLog" asp-route-id="@log.Id" method="post" onsubmit="return confirm('¿Está seguro de eliminar este registro de log del historial?');" style="display:inline;">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            🗑️ Eliminar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const buscarDbInput = document.getElementById("buscarDb");
+            const filtrarEstadoSelect = document.getElementById("filtrarEstado");
+            const logRows = document.querySelectorAll(".log-row");
+
+            function filtrarLogs() {
+                const searchVal = buscarDbInput.value.toLowerCase().trim();
+                const estadoVal = filtrarEstadoSelect.value;
+
+                logRows.forEach(row => {
+                    const rowDb = (row.getAttribute("data-db") || "").toLowerCase();
+                    const rowEstado = row.getAttribute("data-estado") || "";
+
+                    const matchesSearch = rowDb.includes(searchVal);
+                    const matchesEstado = (estadoVal === "Todos" || rowEstado === estadoVal);
+
+                    if (matchesSearch && matchesEstado) {
+                        row.style.display = "";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+            }
+
+            buscarDbInput.addEventListener("input", filtrarLogs);
+            filtrarEstadoSelect.addEventListener("change", filtrarLogs);
+        });
+    </script>
+}

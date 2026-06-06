@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using SistemaRespaldo.EN;
 using SistemaRespaldo.DAL;
@@ -58,6 +58,25 @@ public List<HistorialLog> ObtenerHistorialLogs()
     // Llamamos a la DAL para traer los datos
     SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
     return dal.ObtenerLogs(); // Asegúrate de que en ConsultasDAL se llame ObtenerLogs
+}
+
+public bool EliminarLog(int id)
+{
+    if (id <= 0)
+    {
+        throw new ArgumentException("El ID de log no es válido.");
+    }
+    SistemaRespaldo.DAL.ConsultasDAL dalConsultas = new SistemaRespaldo.DAL.ConsultasDAL();
+    return dalConsultas.EliminarLog(id);
+}
+
+public BaseDatos ObtenerBaseDatosPorId(int id)
+{
+    if (id <= 0)
+    {
+        throw new ArgumentException("El ID no es válido.");
+    }
+    return dal.ObtenerBaseDatosPorId(id);
 }
 
     }

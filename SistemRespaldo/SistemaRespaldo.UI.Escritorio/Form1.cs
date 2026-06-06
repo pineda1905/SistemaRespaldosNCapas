@@ -33,7 +33,6 @@ namespace SistemaRespaldo.UI.Escritorio
 
                 // Usamos la nueva entidad 'BaseDatos'
                 var configPrueba = new BaseDatos
-                var configuracionPrueba = new SistemaRespaldo.EN.ConfiguracionRespaldo
                 {
                     Nombre = "SistemaRespaldos",
                     EsCompleto = false, // Prueba parcial
@@ -42,7 +41,6 @@ namespace SistemaRespaldo.UI.Escritorio
 
                 // Enviamos al motor
                 var resultado = RespaldoMotor.GenerarRespaldo(configPrueba);
-                var resultado = RespaldoMotor.GenerarRespaldo(configuracionPrueba);
 
                 // Guardamos el Log
                 ConsultasDAL dal = new ConsultasDAL();
@@ -88,18 +86,11 @@ namespace SistemaRespaldo.UI.Escritorio
 
                 // Obtenemos todas las bases de datos configuradas desde tu Web
                 var listaConfig = dal.ObtenerBasesDeDatos();
-                // --- INTEGRACIÓN MONGODB: Usamos WebDAL para leer las nuevas columnas ---
-                WebDAL webDal = new WebDAL();
-                var listaConfig = webDal.ObtenerBasesDeDatosActualizado();
 
                 foreach (var config in listaConfig)
                 {
-                    // El motor ahora recibe 'BaseDatos' y aplica tus reglas de ignorar tablas
-                    var resultado = RespaldoMotor.GenerarRespaldo(config);
                     var resultado = (exito: false, mensaje: "");
 
-                    // Registro del historial
-                    dal.InsertarLog(new HistorialLog
                     // --- EL SEMÁFORO: Decidimos qué motor ejecutar ---
                     if (config.TipoMotor == "MongoDB")
                     {
@@ -112,7 +103,7 @@ namespace SistemaRespaldo.UI.Escritorio
                     }
 
                     // --- GUARDADO DE LOG: Se mantiene intacto para ambos motores ---
-                    HistorialLog log = new HistorialLog
+                    dal.InsertarLog(new HistorialLog
                     {
                         BaseDeDatos = config.Nombre,
                         Estado = resultado.exito ? "Exito" : "Error",
@@ -132,10 +123,10 @@ namespace SistemaRespaldo.UI.Escritorio
             {
                 MessageBox.Show("Iniciando prueba forzada...");
 
-                var configPrueba = new SistemaRespaldo.EN.ConfiguracionRespaldo
+                var configPrueba = new BaseDatos
                 {
-                    NombreBaseDatos = "SistemaRespaldos",
-                    TipoRespaldoCompletoOParcial = false,
+                    Nombre = "SistemaRespaldos",
+                    EsCompleto = false,
                     TablasAIgnorar = "horarios"
                 };
 
@@ -144,7 +135,7 @@ namespace SistemaRespaldo.UI.Escritorio
                 SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
                 dal.InsertarLog(new SistemaRespaldo.EN.HistorialLog
                 {
-                    BaseDeDatos = configPrueba.NombreBaseDatos,
+                    BaseDeDatos = configPrueba.Nombre,
                     Estado = resultado.exito ? "Exito" : "Error",
                     Mensaje = resultado.mensaje
                 });

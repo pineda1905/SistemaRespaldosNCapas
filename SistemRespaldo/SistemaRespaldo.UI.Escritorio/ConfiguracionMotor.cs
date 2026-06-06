@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Extensions.Configuration;
 
 namespace SistemaRespaldo.UI.Escritorio
@@ -13,6 +13,7 @@ namespace SistemaRespaldo.UI.Escritorio
 
         // Rutas
         public static string RutaMysqlDump { get; private set; }
+        public static string RutaMongoDump { get; private set; }
         public static string RutaGuardadoRespaldos { get; private set; }
 
         static ConfiguracionMotor()
@@ -33,6 +34,7 @@ namespace SistemaRespaldo.UI.Escritorio
 
                 // 2. Extraemos las rutas
                 RutaMysqlDump = config["Rutas:RutaMysqlDump"];
+                RutaMongoDump = config["Rutas:RutaMongoDump"];
                 RutaGuardadoRespaldos = config["Rutas:RutaGuardadoRespaldos"];
             }
             catch (Exception ex)

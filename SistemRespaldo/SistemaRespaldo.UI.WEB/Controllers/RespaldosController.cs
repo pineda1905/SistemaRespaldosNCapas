@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic; // Necesario para List<>
 using SistemaRespaldo.EN;
@@ -63,6 +63,31 @@ namespace SistemaRespaldo.UI.WEB.Controllers
                 TempData["Error"] = "Error del sistema: " + ex.Message;
                 return RedirectToAction("Index");
             }
+        }
+
+        [HttpPost]
+        public IActionResult EliminarLog(int id)
+        {
+            try
+            {
+                WebBL negocio = new WebBL();
+                bool exito = negocio.EliminarLog(id);
+
+                if (exito)
+                {
+                    TempData["Mensaje"] = "¡Log de historial eliminado correctamente!";
+                }
+                else
+                {
+                    TempData["Error"] = "No se pudo eliminar el log del historial.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error al eliminar el log: " + ex.Message;
+            }
+
+            return RedirectToAction("Index");
         }
     }
 }

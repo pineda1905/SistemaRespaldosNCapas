@@ -123,8 +123,8 @@ namespace SistemaRespaldo.DAL
 
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
-                // Ordenamos por Fecha descendente para ver lo más reciente arriba. Límite de 50 para no saturar.
-                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, Fecha FROM HistorialLogs ORDER BY Fecha DESC LIMIT 50";
+                // Ordenamos por FechaHora descendente para ver lo más reciente arriba. Límite de 50 para no saturar.
+                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, FechaHora AS Fecha FROM HistorialLogs ORDER BY FechaHora DESC LIMIT 50";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
 
                 try
@@ -136,6 +136,7 @@ namespace SistemaRespaldo.DAL
                         {
                             lista.Add(new HistorialLog
                             {
+                                Id = Convert.ToInt32(reader["Id"]),
                                 BaseDeDatos = reader["BaseDeDatos"].ToString(),
                                 Estado = reader["Estado"].ToString(),
                                 Mensaje = reader["Mensaje"].ToString(),
@@ -150,6 +151,27 @@ namespace SistemaRespaldo.DAL
                 }
             }
             return lista;
+        }
+
+        public bool EliminarLog(int id)
+        {
+            using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+            {
+                string query = "DELETE FROM HistorialLogs WHERE Id = @id";
+                MySqlCommand comando = new MySqlCommand(query, conexion);
+                comando.Parameters.AddWithValue("@id", id);
+
+                try
+                {
+                    conexion.Open();
+                    return comando.ExecuteNonQuery() > 0;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error al eliminar log: " + ex.Message);
+                    return false;
+                }
+            }
         }
     }
 }

@@ -155,5 +155,41 @@ namespace SistemaRespaldo.DAL
             }
             return lista;
         }
+
+        public BaseDatos ObtenerBaseDatosPorId(int id)
+        {
+            try
+            {
+                using (var conn = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+                {
+                    conn.Open();
+                    string sql = "SELECT Id, Nombre, EsCompleto, TablasAIgnorar, TipoMotor, CadenaConexion FROM BasesDatos WHERE Id = @id";
+                    using (var cmd = new MySqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@id", id);
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                return new BaseDatos
+                                {
+                                    Id = reader.GetInt32("Id"),
+                                    Nombre = reader.GetString("Nombre"),
+                                    EsCompleto = reader.GetBoolean("EsCompleto"),
+                                    TablasAIgnorar = reader.IsDBNull(reader.GetOrdinal("TablasAIgnorar")) ? "" : reader.GetString("TablasAIgnorar"),
+                                    TipoMotor = reader.IsDBNull(reader.GetOrdinal("TipoMotor")) ? "MySQL" : reader.GetString("TipoMotor"),
+                                    CadenaConexion = reader.IsDBNull(reader.GetOrdinal("CadenaConexion")) ? "" : reader.GetString("CadenaConexion")
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener BaseDatos por Id: " + ex.Message);
+            }
+            return null;
+        }
     }
 }
