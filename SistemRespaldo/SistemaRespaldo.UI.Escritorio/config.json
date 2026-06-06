@@ -1,0 +1,14 @@
+{
+  "ConfiguracionServidor": {
+    "Servidor": "127.0.0.1",
+    "Puerto": "3306",
+    "Usuario": "anderson",
+    "Password": "anderson",
+    "BaseDatosConfig": "SistemaRespaldos"
+  },
+  "Rutas": {
+    "RutaGuardadoRespaldos": "C:\\Users\\PC\\Desktop\\Respaldos",
+    "RutaMysqlDump": "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe",
+    "RutaMongoDump": "C:\\Program Files\\MongoDB\\mongodb-database-tools-windows-x86_64-100.17.0\\bin\\mongodump.exe"
+  }
+}

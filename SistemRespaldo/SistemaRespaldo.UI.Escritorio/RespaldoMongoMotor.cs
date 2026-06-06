@@ -2,11 +2,27 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using SistemaRespaldo.EN;
+using SistemaRespaldo.UI.Escritorio;
 
 namespace SistemaRespaldo.BL
 {
     public class RespaldoMongoMotor
     {
+        // Sobrecarga para compatibilidad con BaseDatos
+        public static (bool exito, string mensaje) GenerarRespaldo(BaseDatos db)
+        {
+            var config = new ConfiguracionRespaldo
+            {
+                NombreBaseDatos = db.Nombre,
+                TipoRespaldoCompletoOParcial = db.EsCompleto,
+                TablasAIgnorar = db.TablasAIgnorar,
+                TipoMotor = db.TipoMotor,
+                CadenaConexion = db.CadenaConexion
+            };
+            return GenerarRespaldo(config);
+        }
+
+        // Método principal
         public static (bool exito, string mensaje) GenerarRespaldo(ConfiguracionRespaldo config)
         {
             try
@@ -25,7 +41,7 @@ namespace SistemaRespaldo.BL
 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
-                    FileName = "mongodump",
+                    FileName = ConfiguracionMotor.RutaMongoDump,
                     Arguments = argumentos,
                     UseShellExecute = false,
                     CreateNoWindow = true,
@@ -34,6 +50,11 @@ namespace SistemaRespaldo.BL
 
                 using (Process proceso = Process.Start(psi))
                 {
+                    if (proceso == null)
+                    {
+                        return (false, "No se pudo iniciar el proceso mongodump.");
+                    }
+
                     string errorCapturado = proceso.StandardError.ReadToEnd();
                     proceso.WaitForExit();
 

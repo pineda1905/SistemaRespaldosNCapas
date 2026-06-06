@@ -124,8 +124,8 @@ namespace SistemaRespaldo.DAL
 
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
-                // Ordenamos por Fecha descendente para ver lo más reciente arriba. Límite de 50 para no saturar.
-                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, Fecha, TipoMotor FROM HistorialLogs ORDER BY Fecha DESC LIMIT 50";
+                // Ordenamos por FechaHora descendente para ver lo más reciente arriba. Límite de 50 para no saturar.
+                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, FechaHora AS Fecha, TipoMotor FROM HistorialLogs ORDER BY FechaHora DESC LIMIT 50";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
 
                 try
@@ -155,12 +155,33 @@ namespace SistemaRespaldo.DAL
             return lista;
         }
 
+        public bool EliminarLog(int id)
+        {
+            using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
+            {
+                string query = "DELETE FROM HistorialLogs WHERE Id = @id";
+                MySqlCommand comando = new MySqlCommand(query, conexion);
+                comando.Parameters.AddWithValue("@id", id);
+
+                try
+                {
+                    conexion.Open();
+                    return comando.ExecuteNonQuery() > 0;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error al eliminar log: " + ex.Message);
+                    return false;
+                }
+            }
+        }
+
         // --- Día 12: Buscar un log específico por su ID (para descarga) ---
         public HistorialLog ObtenerLogPorId(int id)
         {
             using (MySqlConnection conexion = new MySqlConnection(ConfiguracionHelper.CadenaConexion))
             {
-                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, Fecha, TipoMotor FROM HistorialLogs WHERE Id = @id";
+                string query = "SELECT Id, BaseDeDatos, Estado, Mensaje, FechaHora AS Fecha, TipoMotor FROM HistorialLogs WHERE Id = @id";
                 MySqlCommand comando = new MySqlCommand(query, conexion);
                 comando.Parameters.AddWithValue("@id", id);
 

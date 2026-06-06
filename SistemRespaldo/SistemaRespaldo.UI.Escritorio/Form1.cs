@@ -118,6 +118,36 @@ namespace SistemaRespaldo.UI.Escritorio
             }
         }
 
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            try
+            {
+                MessageBox.Show("Iniciando prueba forzada...");
+
+                var configPrueba = new BaseDatos
+                {
+                    Nombre = "SistemaRespaldos",
+                    EsCompleto = false,
+                    TablasAIgnorar = "horarios"
+                };
+
+                var resultado = RespaldoMotor.GenerarRespaldo(configPrueba);
+
+                SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
+                dal.InsertarLog(new SistemaRespaldo.EN.HistorialLog
+                {
+                    BaseDeDatos = configPrueba.Nombre,
+                    Estado = resultado.exito ? "Exito" : "Error",
+                    Mensaje = resultado.mensaje
+                });
+
+                MessageBox.Show($"Resultado: {resultado.mensaje}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error en el botón: {ex.Message}");
+            }
+        }
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             this.Show();

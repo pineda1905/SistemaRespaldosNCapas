@@ -60,6 +60,25 @@ public List<HistorialLog> ObtenerHistorialLogs()
     return dal.ObtenerLogs(); // Asegúrate de que en ConsultasDAL se llame ObtenerLogs
 }
 
+public bool EliminarLog(int id)
+{
+    if (id <= 0)
+    {
+        throw new ArgumentException("El ID de log no es válido.");
+    }
+    SistemaRespaldo.DAL.ConsultasDAL dalConsultas = new SistemaRespaldo.DAL.ConsultasDAL();
+    return dalConsultas.EliminarLog(id);
+}
+
+public BaseDatos ObtenerBaseDatosPorId(int id)
+{
+    if (id <= 0)
+    {
+        throw new ArgumentException("El ID no es válido.");
+    }
+    return dal.ObtenerBaseDatosPorId(id);
+}
+
 // Día 12: Buscar un log específico por ID (para la descarga del archivo)
 public HistorialLog ObtenerLogPorId(int id)
 {
@@ -69,6 +88,7 @@ public HistorialLog ObtenerLogPorId(int id)
     }
     SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
     return dal.ObtenerLogPorId(id);
+}
 }
 
     }
