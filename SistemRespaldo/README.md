@@ -46,61 +46,114 @@ Script_Dia12_TipoMotor_HistorialLogs.sql
 
 ### 2. Archivo de Configuración (`config.json` / `appsettings.json`)
 
-El sistema utiliza **dos archivos de configuración** con la misma estructura:
+El sistema utiliza **dos archivos de configuración** con la misma estructura clave para comunicarse con la base de datos de administración y ejecutar los comandos de respaldo. Ambos archivos deben mantenerse sincronizados con los mismos datos para garantizar que tanto la interfaz web como la aplicación de escritorio operen correctamente.
 
-| Archivo | Ubicación | Usado por |
-|---------|-----------|-----------|
-| `config.json` | `SistemaRespaldo.UI.Escritorio/` | Aplicación de escritorio |
-| `appsettings.json` | `SistemaRespaldo.UI.WEB/` | Interfaz web |
+| Archivo | Ruta Relativa | Propósito |
+|---------|---------------|-----------|
+| `config.json` | `SistemaRespaldo.UI.Escritorio/config.json` | Configura el motor de ejecución de respaldos (Timer, MySQL y MongoDB). |
+| `appsettings.json` | `SistemaRespaldo.UI.WEB/appsettings.json` | Configura el panel web de administración (historial, registro de bases de datos, horarios). |
 
 ---
 
-### 🐧 Configuración para Linux
+### 📝 Guía Detallada de Parámetros JSON
 
-Edita `config.json` y/o `appsettings.json` con estas rutas:
+A continuación se detalla qué significa cada propiedad dentro de los archivos de configuración y qué debes colocar en tu entorno local:
+
+#### Bloque `"ConfiguracionServidor"`
+Este bloque define la conexión a la base de datos MySQL central (`SistemaRespaldos`) donde el sistema guarda las credenciales de las bases de datos a respaldar, los horarios y los logs de historial.
+
+*   **`Servidor`**: Dirección IP o dominio del servidor de base de datos MySQL (por ejemplo: `"127.0.0.1"` o `"localhost"`).
+*   **`Puerto`**: Puerto en el que escucha tu servidor MySQL (por defecto: `"3306"`).
+*   **`Usuario`**: Tu usuario de MySQL (por ejemplo: `"root"`). Debe tener permisos de lectura y escritura.
+*   **`Password`**: La contraseña correspondiente al usuario de MySQL especificado.
+*   **`BaseDatosConfig`**: El nombre de la base de datos de control del sistema (debe ser `"SistemaRespaldos"`, que es la base de datos creada por los scripts del paso 1).
+
+#### Bloque `"Rutas"`
+Este bloque indica al sistema dónde guardar físicamente los respaldos creados y dónde localizar las herramientas externas indispensables para realizarlos.
+
+*   **`RutaGuardadoRespaldos`**: Carpeta local de tu computadora donde se descargarán y almacenarán los archivos generados (`.sql` de MySQL o archivos comprimidos/carpetas de MongoDB).
+    *   *Ejemplo en Windows*: `"C:\\RespaldosMySQL\\"` (Asegúrate de que la carpeta exista o créala manualmente).
+    *   *Ejemplo en Linux*: `"/home/usuario/Desktop/Respaldos/"`.
+*   **`RutaMysqlDump`**: Ruta absoluta directa al ejecutable `mysqldump` (o `mysqldump.exe`). Este binario es propio de la instalación de MySQL y se encarga de exportar la estructura y datos.
+*   **`RutaMongoDump`**: Ruta absoluta directa al ejecutable `mongodump` (o `mongodump.exe`). Este binario se descarga con las MongoDB Database Tools y se encarga de respaldar bases de datos NoSQL MongoDB.
+
+---
+
+### 🪟 Plantilla de Configuración para Windows
+
+Edita tus archivos `config.json` y `appsettings.json` estructurándolos de la siguiente manera. **Reemplaza los valores de ejemplo por tus datos reales:**
 
 ```json
 {
   "ConfiguracionServidor": {
     "Servidor": "127.0.0.1",
     "Puerto": "3306",
-    "Usuario": "tu_usuario_mysql",
-    "Password": "tu_contraseña",
+    "Usuario": "TU_USUARIO_MYSQL",
+    "Password": "TU_CONTRASENA_MYSQL",
     "BaseDatosConfig": "SistemaRespaldos"
   },
   "Rutas": {
-    "RutaGuardadoRespaldos": "/home/tu_usuario/Desktop/Respaldos/",
-    "RutaMysqlDump": "/usr/bin/mysqldump"
+    "RutaGuardadoRespaldos": "C:\\Ruta\\De\\Tu\\Carpeta\\Respaldos\\",
+    "RutaMysqlDump": "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe",
+    "RutaMongoDump": "C:\\Program Files\\MongoDB\\Tools\\100\\bin\\mongodump.exe"
   }
 }
 ```
 
-> **Nota:** En Linux, `mysqldump` suele estar en `/usr/bin/mysqldump`. Puedes verificarlo ejecutando:
-> ```bash
-> which mysqldump
-> ```
+> [!WARNING]
+> **Doble barra invertida (`\\`) obligatoria en Windows:** En la sintaxis JSON, la barra invertida simple (`\`) es un carácter de escape. Si pones `"C:\Respaldos\"`, el programa fallará al leer la configuración. Debes usar obligatoriamente `"C:\\Respaldos\\"` para cada directorio en Windows.
 
-### 🪟 Configuración para Windows
+---
 
-Edita `config.json` y/o `appsettings.json` con estas rutas:
+### 🐧 Plantilla de Configuración para Linux
+
+En Linux, la estructura es idéntica pero utiliza barras inclinadas simples (`/`) y rutas nativas:
 
 ```json
 {
   "ConfiguracionServidor": {
     "Servidor": "127.0.0.1",
     "Puerto": "3306",
-    "Usuario": "root",
-    "Password": "tu_contraseña",
+    "Usuario": "TU_USUARIO_MYSQL",
+    "Password": "TU_CONTRASENA_MYSQL",
     "BaseDatosConfig": "SistemaRespaldos"
   },
   "Rutas": {
-    "RutaGuardadoRespaldos": "C:\\RespaldosMySQL\\",
-    "RutaMysqlDump": "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe"
+    "RutaGuardadoRespaldos": "/home/tu_usuario/Respaldos/",
+    "RutaMysqlDump": "/usr/bin/mysqldump",
+    "RutaMongoDump": "/usr/bin/mongodump"
   }
 }
 ```
 
-> **⚠️ Importante en Windows:** Usa doble barra invertida (`\\`) en las rutas JSON, ya que la barra simple (`\`) es un carácter de escape en JSON.
+---
+
+### 🔍 ¿Cómo encontrar las rutas correctas de los ejecutables?
+
+Si no estás seguro de dónde están instalados los motores en tu máquina, sigue estos pasos para ubicarlos:
+
+#### 1. Para `mysqldump` (MySQL)
+*   **En Windows (Instalación Oficial)**: Generalmente está en `C:\Program Files\MySQL\MySQL Server X.Y\bin\mysqldump.exe` (donde X.Y es la versión, ej. 8.0).
+*   **En Windows (XAMPP)**: Se encuentra en `C:\xampp\mysql\bin\mysqldump.exe`.
+*   **En Windows (Laragon)**: Se encuentra en `C:\laragon\bin\mysql\mysql-X.Y.Z-winx64\bin\mysqldump.exe`.
+*   **En Linux**: Abre una terminal y escribe `which mysqldump`. Copia la ruta que te devuelva (usualmente `/usr/bin/mysqldump`).
+
+#### 2. Para `mongodump` (MongoDB)
+*   **En Windows (Herramientas Oficiales)**: Típicamente está en `C:\Program Files\MongoDB\Tools\100\bin\mongodump.exe` o dentro del directorio de MongoDB Database Tools descargado.
+*   **En Linux**: Abre una terminal y escribe `which mongodump`. Copia la ruta (usualmente `/usr/bin/mongodump`).
+
+---
+
+### 🚨 Reglas de Oro para Evitar Errores
+
+Para garantizar el correcto funcionamiento del sistema, sigue estrictamente estas directrices:
+
+1.  **Sincronización:** Si modificas el puerto, contraseña o usuario de MySQL en el `config.json` de la app de escritorio, **debes hacer el mismo cambio** en el `appsettings.json` del panel web. Si no lo haces, la web no mostrará los datos o el motor de escritorio no podrá leer la programación.
+2.  **Existencia de la carpeta de respaldos:** El sistema **no crea** automáticamente la carpeta indicada en `RutaGuardadoRespaldos`. Debes asegurarte de crearla físicamente en tu disco duro antes de ejecutar el primer respaldo.
+3.  **Permisos de Escritura:** La carpeta especificada en `RutaGuardadoRespaldos` debe poseer permisos de escritura completos para el usuario que esté ejecutando las aplicaciones.
+4.  **No confundas las bases de datos:**
+    *   `BaseDatosConfig` (en el JSON) es únicamente para la base de datos de control interno (`SistemaRespaldos`).
+    *   Las bases de datos que deseas respaldar (tus proyectos personales, bases de prueba, etc.) se agregan directamente **desde el Panel Web**, no se escriben en los JSON.
 
 ---
 

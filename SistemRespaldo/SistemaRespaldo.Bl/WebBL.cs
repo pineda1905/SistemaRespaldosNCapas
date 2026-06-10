@@ -89,8 +89,5 @@ public HistorialLog ObtenerLogPorId(int id)
     SistemaRespaldo.DAL.ConsultasDAL dal = new SistemaRespaldo.DAL.ConsultasDAL();
     return dal.ObtenerLogPorId(id);
 }
-}
-
     }
-
 }
